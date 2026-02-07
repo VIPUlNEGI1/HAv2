@@ -10,12 +10,15 @@ import {
 } from 'react-native';
 import { supabase } from '@/hooks/superbase';
 import { useAuthStore } from '@/hooks/useAuthStore';
+import { useRoleStore } from '@/hooks/useRoleStore';
+import type { UserRole } from '@/types';
 
 const LoginScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const setAuth = useAuthStore(state => state.setAuth);
+  const { setAvailableRoles, setRole } = useRoleStore();
 
   const handleLogin = async () => {
     if (!phoneNumber || phoneNumber.length < 10) {
@@ -38,6 +41,16 @@ const LoginScreen = () => {
       if (existingUser) {
         console.log('User found:', existingUser);
         setAuth(existingUser, 'dummy-token');
+        
+        // Initialize roles - if user has roles, use them; otherwise set all roles for testing
+        const userRoles: UserRole[] = existingUser.roles && existingUser.roles.length > 0
+          ? existingUser.roles
+          : ['user', 'doctor', 'clinic', 'factory'];
+        
+        setAvailableRoles(userRoles);
+        if (userRoles.length > 0) {
+          setRole(userRoles[0]);
+        }
         return;
       }
 
@@ -60,6 +73,11 @@ const LoginScreen = () => {
 
       console.log('New user registered:', newUser);
       setAuth(newUser, 'dummy-token');
+      
+      // Initialize roles for new user - default to all roles for testing
+      const defaultRoles: UserRole[] = ['user', 'doctor', 'clinic', 'factory'];
+      setAvailableRoles(defaultRoles);
+      setRole('user'); // Default to user role for new users
     } catch (err: any) {
       Alert.alert('Login Failed', err.message);
     } finally {

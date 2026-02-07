@@ -1,21 +1,22 @@
 import { MMKV } from 'react-native-mmkv';
 import type { StateStorage } from 'zustand/middleware';
 
-const storage = new MMKV({
+// @ts-ignore
+const storageInstance = new MMKV({
   id: 'DreamProject',
 });
 
 export const zustandStorage: StateStorage = {
   setItem: (name: string, value: string) => {
     try {
-      storage.set(name, value);
+      storageInstance.set(name, value);
     } catch (e) {
       console.error('MMKV setItem error:', e);
     }
   },
   getItem: (name: string) => {
     try {
-      const value = storage.getString(name);
+      const value = storageInstance.getString(name);
       return value ?? null;
     } catch (e) {
       console.error('MMKV getItem error:', e);
@@ -24,7 +25,7 @@ export const zustandStorage: StateStorage = {
   },
   removeItem: (name: string) => {
     try {
-      storage.delete(name);
+      storageInstance.delete(name);
     } catch (e) {
       console.error('MMKV removeItem error:', e);
     }
@@ -36,6 +37,7 @@ export const AppStorageKeys = {
   USER_ID: '@user_id',
   PHONE: '@phone',
   KYC_STATUS: '@kyc_status',
+  CURRENT_ROLE: '@current_role',
 };
 
-export default storage;
+export default storageInstance;

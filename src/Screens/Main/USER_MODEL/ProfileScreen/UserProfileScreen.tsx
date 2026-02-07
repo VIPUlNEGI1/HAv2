@@ -23,15 +23,14 @@ import {
   UserCircle,
 } from 'lucide-react-native';
 import { useTheme } from '@/Theme/useTheme';
- 
+import { useProfile } from './Hook/useProfile';
+import { ProfileOption } from '../components/ProfileOption';
+import { RoleSelectionModal } from '../../CommonScreens/components/RoleSelectionModal';
 import { useRoleStore } from '@/hooks/useRoleStore';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
 import type { UserRole } from '@/types';
-import { ProfileOption } from '@/Components/ProfileScreenOptions/ProfileOption';
-import { RoleSelectionModal } from '../CommonScreens/components/RoleSelectionModal';
-import { useProfile } from '../USER_MODEL/hooks/useProfile';
 
 const UserProfileScreen = () => {
   const { theme, isDarkMode, shadows } = useTheme();
@@ -108,7 +107,7 @@ const UserProfileScreen = () => {
 
       {/* Stats Row - Floating Design */}
       <Animated.View entering={FadeInDown.delay(200)} style={[styles.statsRow, { backgroundColor: theme.surface, ...shadows }]}>
-        {profileStats.map((stat: any, index: number) => (
+        {profileStats.map((stat, index) => (
           <View 
             key={stat.label} 
             style={[

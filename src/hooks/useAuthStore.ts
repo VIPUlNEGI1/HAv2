@@ -1,13 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandStorage } from '@/Helpers/AppStorage';
-
-interface User {
-  id: string;
-  phone_number: string;
-  name: string;
-  // add other user fields as needed
-}
+import type { User, UserRole } from '@/types';
+import { useRoleStore } from './useRoleStore';
 
 interface AuthState {
   user: User | null;
@@ -26,10 +21,19 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, token) => {
         console.log('Setting Auth State:', { user, token });
         set({ user, token, isAuthenticated: true });
+        
+        // Set available roles from user data
+        if (user.roles && user.roles.length > 0) {
+          useRoleStore.getState().setAvailableRoles(user.roles);
+        } else {
+          // Default to user role if no roles specified
+          useRoleStore.getState().setAvailableRoles(['user']);
+        }
       },
       logout: () => {
         console.log('Logging out...');
         set({ user: null, token: null, isAuthenticated: false });
+        useRoleStore.getState().clearRole();
       },
     }),
     {

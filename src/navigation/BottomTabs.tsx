@@ -1,8 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { HomeStackNavigator } from './HomeStackNavigator';
-import UserListScreen from '@/Screens/Main/UserListScreen/UserListScreen';
-import MapScreen from '@/Screens/Main/mapScreen/mapScreen';
+import UserListScreen from '@/Screens/Main/USER_MODEL/UserListScreen/UserListScreen';
+import MapScreen from '@/Screens/Main/USER_MODEL/mapScreen/mapScreen';
 import UserProfileScreen from '@/Screens/Main/ProfileScreen/UserProfileScreen';
 import { Home, Pill, MessageSquare, MapPin, User } from 'lucide-react-native';
 import { useTheme } from '@/Theme/useTheme';

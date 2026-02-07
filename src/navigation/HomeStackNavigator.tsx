@@ -2,18 +2,23 @@ import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/
 import React from 'react';
 import { Constant } from '@/Helpers/Constant';
 import type { RootStackParamList } from '@/types';
-import DashboardScreen from '@/Screens/Main/DashboardScreen/DashboardScreen';
-import DoctorsScreen from '@/Screens/Main/DoctorsScreen/DoctorsScreen';
-import LabTestsScreen from '@/Screens/Main/LabTestsScreen/LabTestsScreen';
-import AppointmentsScreen from '@/Screens/Main/AppointmentsScreen/AppointmentsScreen';
-import WellnessScreen from '@/Screens/Main/WellnessScreen/WellnessScreen';
-import AyurvedaScreen from '@/Screens/Main/AyurvedaScreen/AyurvedaScreen';
-import HomeCareScreen from '@/Screens/Main/HomeCareScreen/HomeCareScreen';
-import BabyCareScreen from '@/Screens/Main/BabyCareScreen/BabyCareScreen';
-import MedicineScreen from '@/Screens/Main/MedicineScreen/MedicineScreen';
-import MedicineDetailsScreen from '@/Screens/Main/MedicineScreen/MedicineDetailsScreen';
-import DoctorDetailsScreen from '@/Screens/Main/DoctorsScreen/DoctorDetailsScreen';
-import LabTestDetailsScreen from '@/Screens/Main/LabTestsScreen/LabTestDetailsScreen';
+import RoleBasedDashboard from '@/Screens/Main/CommonScreens/components/RoleBasedDashboard';
+import DoctorsScreen from '@/Screens/Main/USER_MODEL/DoctorsScreen/DoctorsScreen';
+import LabTestsScreen from '@/Screens/Main/USER_MODEL/LabTestsScreen/LabTestsScreen';
+import AppointmentsScreen from '@/Screens/Main/USER_MODEL/AppointmentsScreen/AppointmentsScreen';
+import WellnessScreen from '@/Screens/Main/USER_MODEL/WellnessScreen/WellnessScreen';
+// import AyurvedaScreen from '@/Screens/Main/AyurvedaScreen/AyurvedaScreen';
+// import HomeCareScreen from '@/Screens/Main/HomeCareScreen/HomeCareScreen';
+// import BabyCareScreen from '@/Screens/Main/BabyCareScreen/BabyCareScreen';
+import MedicineScreen from '@/Screens/Main/USER_MODEL/MedicineScreen/MedicineScreen';
+import MedicineDetailsScreen from '@/Screens/Main/USER_MODEL/MedicineScreen/MedicineDetailsScreen';
+import DoctorDetailsScreen from '@/Screens/Main/USER_MODEL/DoctorsScreen/DoctorDetailsScreen';
+import LabTestDetailsScreen from '@/Screens/Main/USER_MODEL/LabTestsScreen/LabTestDetailsScreen';
+import { AyurvedaScreen, BabyCareScreen, HomeCareScreen } from '@/Screens/Main/USER_MODEL/PlaceholderScreens';
+import DoctorProfileScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorProfileScreen';
+import DoctorAppointmentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorAppointmentsScreen';
+import DoctorDocumentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorDocumentsScreen';
+import DoctorPaymentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorPaymentsScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -28,7 +33,7 @@ export const HomeStackNavigator = () => {
         presentation: 'transparentModal',
       }}
     >
-      <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
+      <Stack.Screen name="DashboardScreen" component={RoleBasedDashboard} />
       <Stack.Screen name="MedicineScreen" component={MedicineScreen} />
       <Stack.Screen 
         name="MedicineDetailsScreen" 
@@ -46,6 +51,12 @@ export const HomeStackNavigator = () => {
       <Stack.Screen name="AyurvedaScreen" component={AyurvedaScreen} />
       <Stack.Screen name="HomeCareScreen" component={HomeCareScreen} />
       <Stack.Screen name="BabyCareScreen" component={BabyCareScreen} />
+      
+      {/* Doctor Model Screens */}
+      <Stack.Screen name="DoctorProfileScreen" component={DoctorProfileScreen} />
+      <Stack.Screen name="DoctorAppointmentsScreen" component={DoctorAppointmentsScreen} />
+      <Stack.Screen name="DoctorDocumentsScreen" component={DoctorDocumentsScreen} />
+      <Stack.Screen name="DoctorPaymentsScreen" component={DoctorPaymentsScreen} />
     </Stack.Navigator>
   );
 };

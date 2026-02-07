@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
 import { ChevronRight, Star } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { moderateScale, verticalScale } from '@/Helpers/Responsive';
+import { moderateScale, verticalScale, SCREEN_WIDTH } from '@/Helpers/Responsive';
 
 export const TrendingTests = () => {
   const { theme } = useTheme();
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
 
   trendingCard: {
-    aspectRatio: 1.1,
+    width: SCREEN_WIDTH * 0.7,
     borderRadius: moderateScale(20),
     padding: moderateScale(16),
     elevation: 3,

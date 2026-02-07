@@ -3,8 +3,8 @@ import React from 'react';
 import { Constant } from '@/Helpers/Constant';
 import type { RootStackParamList } from '@/types';
 import BottomTabs from './BottomTabs';
-import ChatScreen from '@/Screens/Main/chatsocket/UserListScreen/ChatScreen';
-import CartScreen from '@/Screens/Main/CartScreen/CartScreen';
+import ChatScreen from '@/Screens/Main/CommonScreens/chatsocket/UserListScreen/ChatScreen';
+import CartScreen from '@/Screens/Main/CommonScreens/CartScreen/CartScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
