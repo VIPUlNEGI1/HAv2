@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
-import { Clock, ChevronRight, User, Search, MapPin, Bell, Settings } from 'lucide-react-native';
+import { Building2, ChevronRight, Search, Bell, Settings } from 'lucide-react-native';
 import { useTheme } from '@/Theme/useTheme';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import { moderateScale, verticalScale, getStatusBarHeight } from '@/Helpers/Resp
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-export const DoctorDashboardHeader = () => {
+export const ClinicDashboardHeader = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -18,36 +18,36 @@ export const DoctorDashboardHeader = () => {
     ? Math.max(insets.top, statusBarHeight) + moderateScale(8)
     : statusBarHeight + moderateScale(12);
 
-  // Mock doctor data - in real app, get from store/context
-  const doctorData = {
-    name: 'Dr. Smith',
-    specialization: 'Senior Cardiologist',
-    image: null, // Will be set from profile
+  // Mock clinic data - in real app, get from store/context
+  const clinicData = {
+    name: 'City Clinic',
+    location: 'Downtown Medical Center',
+    image: null,
   };
 
   return (
     <LinearGradient 
-      colors={['#4B2A99', '#6366F1', '#8B5CF6']} 
+      colors={['#00796B', '#004D40', '#00251A']} 
       start={{ x: 0, y: 0 }} 
       end={{ x: 1, y: 1 }}
       style={[styles.headerBackground, { paddingTop: headerPaddingTop }]}
     >
       <Animated.View entering={FadeInDown.delay(100)} style={styles.headerTop}>
         <TouchableOpacity 
-          onPress={() => navigation.navigate('DoctorProfileScreen')}
-          style={styles.doctorInfo}
+          onPress={() => navigation.navigate('ClinicProfileScreen')}
+          style={styles.clinicInfo}
           activeOpacity={0.8}
         >
           <View style={styles.profileCircle}>
-            {doctorData.image ? (
-              <Image source={{ uri: doctorData.image }} style={styles.profileImage} />
+            {clinicData.image ? (
+              <Image source={{ uri: clinicData.image }} style={styles.profileImage} />
             ) : (
-              <User size={moderateScale(22)} color="#4B2A99" />
+              <Building2 size={moderateScale(22)} color="#00796B" />
             )}
           </View>
           <View style={styles.welcomeTextContainer}>
-            <Text style={styles.welcomeTitle} numberOfLines={1}>{doctorData.name}</Text>
-            <Text style={styles.welcomeSubtitle} numberOfLines={1}>{doctorData.specialization}</Text>
+            <Text style={styles.welcomeTitle} numberOfLines={1}>{clinicData.name}</Text>
+            <Text style={styles.welcomeSubtitle} numberOfLines={1}>{clinicData.location}</Text>
           </View>
           <ChevronRight size={moderateScale(16)} color="rgba(255,255,255,0.8)" />
         </TouchableOpacity>
@@ -56,7 +56,7 @@ export const DoctorDashboardHeader = () => {
           <TouchableOpacity 
             style={styles.iconBadge} 
             activeOpacity={0.8}
-            onPress={() => navigation.navigate('SettingsScreen')}
+            onPress={() => navigation.navigate('ClinicSettingsScreen')}
           >
             <Settings size={moderateScale(20)} color="#fff" />
           </TouchableOpacity>
@@ -77,7 +77,7 @@ export const DoctorDashboardHeader = () => {
           activeOpacity={0.8}
         >
           <Search size={moderateScale(18)} color="rgba(255,255,255,0.9)" />
-          <Text style={styles.searchPlaceholder}>Search patients, appointments...</Text>
+          <Text style={styles.searchPlaceholder}>Search products, orders...</Text>
         </TouchableOpacity>
       </Animated.View>
     </LinearGradient>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16), 
     marginHorizontal: moderateScale(16),
   },
-  doctorInfo: { 
+  clinicInfo: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     flex: 1,

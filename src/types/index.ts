@@ -33,6 +33,38 @@ export type RootStackParamList = {
   DoctorServicesScreen: undefined;
   DoctorDocumentsScreen: undefined;
   DoctorPaymentsScreen: undefined;
+  DoctorChatScreen: { user?: any };
+  DoctorVideoCallScreen: { user?: any };
+  DoctorAudioCallScreen: { user?: any };
+  DoctorSettingsScreen: undefined;
+  DoctorManageServicesScreen: undefined;
+  DoctorPatientListScreen: undefined;
+  SettingsScreen: undefined;
+  // Clinic Model Screens
+  ClinicProductsScreen: undefined;
+  ClinicOrdersScreen: undefined;
+  ClinicExpensesScreen: undefined;
+  ClinicLicensesScreen: undefined;
+  ClinicFactoriesScreen: undefined;
+  ClinicInventoryScreen: undefined;
+  ClinicProfileScreen: undefined;
+  ClinicSettingsScreen: undefined;
+  FactoryProductsScreen: { factory: any };
+  ClinicProductDetailsScreen: { product: any; editMode?: boolean };
+  ClinicOrderDetailsScreen: { orderId: string };
+  ClinicChatScreen: { user?: any };
+  // Factory Model Screens
+  FactoryManageProductsScreen: undefined;
+  FactoryClientsScreen: undefined;
+  FactoryClientDetailsScreen: { clientId: string };
+  FactoryOrdersScreen: undefined;
+  FactoryOrderDetailsScreen: { orderId: string };
+  FactoryPaymentsScreen: undefined;
+  FactoryShippingScreen: undefined;
+  FactoryProfileScreen: undefined;
+  FactorySettingsScreen: undefined;
+  FactoryProductDetailsScreen: { product: any; editMode?: boolean };
+  FactoryChatScreen: { user?: any };
 };
 
 export type UserRole = 'user' | 'doctor' | 'clinic' | 'factory';

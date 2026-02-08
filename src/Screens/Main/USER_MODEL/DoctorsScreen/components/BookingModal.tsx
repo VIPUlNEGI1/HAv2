@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions, TextInput, Image, Alert } from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
-import { X, Calendar as CalendarIcon, Clock, CheckCircle2 } from 'lucide-react-native';
+import { X, Calendar as CalendarIcon, Clock, CheckCircle2, Upload, FileText, Image as ImageIcon, XCircle } from 'lucide-react-native';
 import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { launchImageLibrary, launchCamera, ImagePickerResponse, MediaType } from 'react-native-image-picker';
+import { moderateScale, verticalScale } from '@/Helpers/Responsive';
 
 const { height } = Dimensions.get('window');
 
@@ -25,14 +27,83 @@ const DAYS = [
   { day: 'Fri', date: '28', full: 'Oct 28, 2026' },
 ];
 
+interface PatientDetails {
+  chiefComplaint: string;
+  symptoms: string;
+  medicalHistory: string;
+  currentMedications: string;
+  allergies: string;
+  reports: Array<{ id: string; name: string; uri: string }>;
+}
+
 export const BookingModal = ({ visible, onClose, onConfirm, doctorName }: any) => {
   const { theme, shadows } = useTheme();
   const [selectedDay, setSelectedDay] = useState(DAYS[0]);
   const [selectedTime, setSelectedTime] = useState('');
+  const [showPatientDetails, setShowPatientDetails] = useState(false);
+  const [patientDetails, setPatientDetails] = useState<PatientDetails>({
+    chiefComplaint: '',
+    symptoms: '',
+    medicalHistory: '',
+    currentMedications: '',
+    allergies: '',
+    reports: [],
+  });
+
+  const handleImagePicker = () => {
+    Alert.alert(
+      'Select Report',
+      'Choose an option',
+      [
+        { text: 'Camera', onPress: () => openCamera() },
+        { text: 'Gallery', onPress: () => openGallery() },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const openCamera = () => {
+    launchCamera({ mediaType: 'photo' as MediaType, quality: 0.8 }, (response: ImagePickerResponse) => {
+      if (response.assets && response.assets[0]) {
+        const newReport = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: `Report_${Date.now()}.jpg`,
+          uri: response.assets[0].uri || '',
+        };
+        setPatientDetails({
+          ...patientDetails,
+          reports: [...patientDetails.reports, newReport],
+        });
+      }
+    });
+  };
+
+  const openGallery = () => {
+    launchImageLibrary({ mediaType: 'photo' as MediaType, quality: 0.8 }, (response: ImagePickerResponse) => {
+      if (response.assets && response.assets[0]) {
+        const newReport = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: response.assets[0].fileName || `Report_${Date.now()}.jpg`,
+          uri: response.assets[0].uri || '',
+        };
+        setPatientDetails({
+          ...patientDetails,
+          reports: [...patientDetails.reports, newReport],
+        });
+      }
+    });
+  };
+
+  const removeReport = (id: string) => {
+    setPatientDetails({
+      ...patientDetails,
+      reports: patientDetails.reports.filter(r => r.id !== id),
+    });
+  };
 
   const handleConfirm = () => {
     if (!selectedTime) return;
-    onConfirm(selectedDay.full, selectedTime);
+    onConfirm(selectedDay.full, selectedTime, patientDetails);
   };
 
   return (
@@ -109,6 +180,119 @@ export const BookingModal = ({ visible, onClose, onConfirm, doctorName }: any) =
                 ))}
               </View>
             </View>
+
+            {/* Patient Details Section */}
+            <View style={styles.section}>
+              <TouchableOpacity 
+                onPress={() => setShowPatientDetails(!showPatientDetails)}
+                style={[styles.patientDetailsToggle, { backgroundColor: theme.background }]}
+              >
+                <View style={styles.sectionHeader}>
+                  <FileText size={18} color={theme.primary} />
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>Patient Details (Optional)</Text>
+                </View>
+                <Text style={[styles.toggleText, { color: theme.textSecondary }]}>
+                  {showPatientDetails ? 'Hide' : 'Add'} Details
+                </Text>
+              </TouchableOpacity>
+
+              {showPatientDetails && (
+                <View style={styles.patientDetailsForm}>
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.text }]}>Chief Complaint *</Text>
+                    <TextInput
+                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                      placeholder="Describe your main concern..."
+                      placeholderTextColor={theme.textSecondary}
+                      value={patientDetails.chiefComplaint}
+                      onChangeText={(text) => setPatientDetails({ ...patientDetails, chiefComplaint: text })}
+                      multiline
+                      numberOfLines={3}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.text }]}>Symptoms</Text>
+                    <TextInput
+                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                      placeholder="List your symptoms..."
+                      placeholderTextColor={theme.textSecondary}
+                      value={patientDetails.symptoms}
+                      onChangeText={(text) => setPatientDetails({ ...patientDetails, symptoms: text })}
+                      multiline
+                      numberOfLines={2}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.text }]}>Medical History</Text>
+                    <TextInput
+                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                      placeholder="Any previous medical conditions..."
+                      placeholderTextColor={theme.textSecondary}
+                      value={patientDetails.medicalHistory}
+                      onChangeText={(text) => setPatientDetails({ ...patientDetails, medicalHistory: text })}
+                      multiline
+                      numberOfLines={2}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.text }]}>Current Medications</Text>
+                    <TextInput
+                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                      placeholder="List current medications..."
+                      placeholderTextColor={theme.textSecondary}
+                      value={patientDetails.currentMedications}
+                      onChangeText={(text) => setPatientDetails({ ...patientDetails, currentMedications: text })}
+                      multiline
+                      numberOfLines={2}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.text }]}>Allergies</Text>
+                    <TextInput
+                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                      placeholder="Any known allergies..."
+                      placeholderTextColor={theme.textSecondary}
+                      value={patientDetails.allergies}
+                      onChangeText={(text) => setPatientDetails({ ...patientDetails, allergies: text })}
+                      multiline
+                      numberOfLines={2}
+                    />
+                  </View>
+
+                  {/* Reports Upload */}
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.text }]}>Medical Reports</Text>
+                    <TouchableOpacity
+                      onPress={handleImagePicker}
+                      style={[styles.uploadBtn, { backgroundColor: theme.primary + '15', borderColor: theme.primary }]}
+                    >
+                      <Upload size={18} color={theme.primary} />
+                      <Text style={[styles.uploadBtnText, { color: theme.primary }]}>Upload Report</Text>
+                    </TouchableOpacity>
+
+                    {patientDetails.reports.length > 0 && (
+                      <View style={styles.reportsList}>
+                        {patientDetails.reports.map((report) => (
+                          <View key={report.id} style={[styles.reportItem, { backgroundColor: theme.background }]}>
+                            <ImageIcon size={16} color={theme.primary} />
+                            <Text style={[styles.reportItemText, { color: theme.text }]} numberOfLines={1}>
+                              {report.name}
+                            </Text>
+                            <TouchableOpacity onPress={() => removeReport(report.id)}>
+                              <XCircle size={16} color={theme.error || '#EF4444'} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              )}
+            </View>
           </ScrollView>
 
           <View style={[styles.footer, { borderTopColor: theme.border }]}>
@@ -151,4 +335,64 @@ const styles = StyleSheet.create({
   footer: { padding: 24, borderTopWidth: 1 },
   confirmBtn: { height: 56, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  patientDetailsToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: moderateScale(12),
+    borderRadius: moderateScale(12),
+    marginBottom: moderateScale(12),
+  },
+  toggleText: {
+    fontSize: moderateScale(13),
+    fontWeight: '700',
+  },
+  patientDetailsForm: {
+    marginTop: moderateScale(12),
+  },
+  inputGroup: {
+    marginBottom: moderateScale(16),
+  },
+  inputLabel: {
+    fontSize: moderateScale(14),
+    fontWeight: '700',
+    marginBottom: moderateScale(8),
+  },
+  textInput: {
+    borderRadius: moderateScale(12),
+    padding: moderateScale(12),
+    borderWidth: 1,
+    fontSize: moderateScale(14),
+    minHeight: verticalScale(80),
+    textAlignVertical: 'top',
+  },
+  uploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(12),
+    borderWidth: 1.5,
+    gap: moderateScale(8),
+  },
+  uploadBtnText: {
+    fontSize: moderateScale(14),
+    fontWeight: '700',
+  },
+  reportsList: {
+    marginTop: moderateScale(12),
+    gap: moderateScale(8),
+  },
+  reportItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: moderateScale(12),
+    borderRadius: moderateScale(10),
+    gap: moderateScale(10),
+  },
+  reportItemText: {
+    flex: 1,
+    fontSize: moderateScale(13),
+    fontWeight: '600',
+  },
 });

@@ -6,17 +6,15 @@ import { DoctorDashboardHeader } from './components/DoctorDashboardHeader';
 import { DoctorQuickActions } from './components/DoctorQuickActions';
 import { DoctorServicesGrid } from './components/DoctorServicesGrid';
 import AppSeparator from '@/Components/AppSeparator/AppSeparator';
+import { SaudiRiyal, ScrollIcon } from 'lucide-react-native';
 
 const DoctorDashboardScreen = () => {
   const { theme, shadows } = useTheme();
 
   return (
-    <ScreenWrapper
-      customHeader={<DoctorDashboardHeader />}
-      scrollable={true}
-      containerStyle={{ backgroundColor: theme.background }}
-      contentStyle={{ paddingTop: 0 }}
-    >
+  <ScrollView> 
+      <DoctorDashboardHeader />
+      
       <DoctorQuickActions />
       <DoctorServicesGrid />
       
@@ -31,7 +29,7 @@ const DoctorDashboardScreen = () => {
       </View>
       
       <AppSeparator size={30} />
-    </ScreenWrapper>
+      </ScrollView>
   );
 };
 

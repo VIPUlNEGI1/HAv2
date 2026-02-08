@@ -1,19 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { FileText, CreditCard, User, Stethoscope, ChevronRight } from 'lucide-react-native';
+import { Pill, ShoppingCart, FileText, TrendingUp, Building2, Package, ChevronRight, MessageSquare } from 'lucide-react-native';
 import { moderateScale, verticalScale } from '@/Helpers/Responsive';
 import { useTheme } from '@/Theme/useTheme';
 import { useNavigation } from '@react-navigation/native';
 
-export const DoctorServicesGrid = () => {
+export const ClinicServicesGrid = () => {
   const { theme, shadows } = useTheme();
   const navigation = useNavigation<any>();
 
   const services = [
-    { title: 'Patient Documents', icon: FileText, color: '#EC4899', screen: 'DoctorDocumentsScreen', desc: 'View medical reports' },
-    { title: 'Earnings & Payouts', icon: CreditCard, color: '#059669', screen: 'DoctorPaymentsScreen', desc: 'Track your revenue' },
-    { title: 'Professional Profile', icon: User, color: '#6366F1', screen: 'DoctorProfileScreen', desc: 'Edit your details' },
-    { title: 'Manage Services', icon: Stethoscope, color: '#F43F5E', screen: 'DoctorManageServicesScreen', desc: 'Update consultation fees' },
+    { title: 'Products', icon: Pill, color: '#10B981', screen: 'ClinicProductsScreen', desc: 'Manage your products' },
+    { title: 'Orders', icon: ShoppingCart, color: '#3B82F6', screen: 'ClinicOrdersScreen', desc: 'View all orders' },
+    { title: 'Expenses & Payments', icon: TrendingUp, color: '#F59E0B', screen: 'ClinicExpensesScreen', desc: 'Track expenses' },
+    { title: 'Licenses & Documents', icon: FileText, color: '#EC4899', screen: 'ClinicLicensesScreen', desc: 'Manage licenses' },
+    { title: 'Factories', icon: Building2, color: '#6366F1', screen: 'ClinicFactoriesScreen', desc: 'Buy from factories' },
+    { title: 'Inventory', icon: Package, color: '#F43F5E', screen: 'ClinicInventoryScreen', desc: 'Stock management' },
+    { title: 'Chat with Factories', icon: MessageSquare, color: '#8B5CF6', screen: 'ClinicChatScreen', desc: 'Communicate with factories' },
   ];
 
   return (
@@ -25,6 +28,7 @@ export const DoctorServicesGrid = () => {
             key={index}
             style={[styles.serviceCard, { backgroundColor: theme.surface, ...shadows }]}
             onPress={() => service.screen && navigation.navigate(service.screen)}
+            activeOpacity={0.7}
           >
             <View style={[styles.iconContainer, { backgroundColor: service.color + '15' }]}>
               <service.icon size={moderateScale(24)} color={service.color} />

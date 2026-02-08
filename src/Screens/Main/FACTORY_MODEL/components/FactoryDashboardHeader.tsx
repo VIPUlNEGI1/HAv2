@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
-import { Clock, ChevronRight, User, Search, MapPin, Bell, Settings } from 'lucide-react-native';
+import { Factory, ChevronRight, Search, Bell, Settings } from 'lucide-react-native';
 import { useTheme } from '@/Theme/useTheme';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import { moderateScale, verticalScale, getStatusBarHeight } from '@/Helpers/Resp
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-export const DoctorDashboardHeader = () => {
+export const FactoryDashboardHeader = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -18,36 +18,36 @@ export const DoctorDashboardHeader = () => {
     ? Math.max(insets.top, statusBarHeight) + moderateScale(8)
     : statusBarHeight + moderateScale(12);
 
-  // Mock doctor data - in real app, get from store/context
-  const doctorData = {
-    name: 'Dr. Smith',
-    specialization: 'Senior Cardiologist',
-    image: null, // Will be set from profile
+  // Mock factory data - in real app, get from store/context
+  const factoryData = {
+    name: 'Pharma Factory Ltd.',
+    location: 'Industrial Area, Sector 63',
+    image: null,
   };
 
   return (
     <LinearGradient 
-      colors={['#4B2A99', '#6366F1', '#8B5CF6']} 
+      colors={['#4B2A99', '#6B46C1', '#8B5CF6']} 
       start={{ x: 0, y: 0 }} 
       end={{ x: 1, y: 1 }}
       style={[styles.headerBackground, { paddingTop: headerPaddingTop }]}
     >
       <Animated.View entering={FadeInDown.delay(100)} style={styles.headerTop}>
         <TouchableOpacity 
-          onPress={() => navigation.navigate('DoctorProfileScreen')}
-          style={styles.doctorInfo}
+          onPress={() => navigation.navigate('FactoryProfileScreen')}
+          style={styles.factoryInfo}
           activeOpacity={0.8}
         >
           <View style={styles.profileCircle}>
-            {doctorData.image ? (
-              <Image source={{ uri: doctorData.image }} style={styles.profileImage} />
+            {factoryData.image ? (
+              <Image source={{ uri: factoryData.image }} style={styles.profileImage} />
             ) : (
-              <User size={moderateScale(22)} color="#4B2A99" />
+              <Factory size={moderateScale(22)} color="#4B2A99" />
             )}
           </View>
           <View style={styles.welcomeTextContainer}>
-            <Text style={styles.welcomeTitle} numberOfLines={1}>{doctorData.name}</Text>
-            <Text style={styles.welcomeSubtitle} numberOfLines={1}>{doctorData.specialization}</Text>
+            <Text style={styles.welcomeTitle} numberOfLines={1}>{factoryData.name}</Text>
+            <Text style={styles.welcomeSubtitle} numberOfLines={1}>{factoryData.location}</Text>
           </View>
           <ChevronRight size={moderateScale(16)} color="rgba(255,255,255,0.8)" />
         </TouchableOpacity>
@@ -56,7 +56,7 @@ export const DoctorDashboardHeader = () => {
           <TouchableOpacity 
             style={styles.iconBadge} 
             activeOpacity={0.8}
-            onPress={() => navigation.navigate('SettingsScreen')}
+            onPress={() => navigation.navigate('FactorySettingsScreen')}
           >
             <Settings size={moderateScale(20)} color="#fff" />
           </TouchableOpacity>
@@ -77,7 +77,7 @@ export const DoctorDashboardHeader = () => {
           activeOpacity={0.8}
         >
           <Search size={moderateScale(18)} color="rgba(255,255,255,0.9)" />
-          <Text style={styles.searchPlaceholder}>Search patients, appointments...</Text>
+          <Text style={styles.searchPlaceholder}>Search products, clients, orders...</Text>
         </TouchableOpacity>
       </Animated.View>
     </LinearGradient>
@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: moderateScale(32),
     width: '100%',
     marginTop: Platform.OS === 'ios' ? -moderateScale(75) : 0,
-    minHeight: verticalScale(300),
-    paddingBottom: verticalScale(20),
+    minHeight: verticalScale(320),
+    paddingBottom: verticalScale(28),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -102,19 +102,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: verticalScale(16), 
+    marginBottom: verticalScale(20), 
     marginHorizontal: moderateScale(16),
+    minHeight: verticalScale(60),
   },
-  doctorInfo: { 
+  factoryInfo: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     flex: 1,
     gap: moderateScale(12),
   },
   profileCircle: { 
-    width: moderateScale(50), 
-    height: moderateScale(50), 
-    borderRadius: moderateScale(25), 
+    width: moderateScale(52), 
+    height: moderateScale(52), 
+    borderRadius: moderateScale(26), 
     backgroundColor: '#fff', 
     justifyContent: 'center', 
     alignItems: 'center',
@@ -125,22 +126,27 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   profileImage: {
-    width: moderateScale(50),
-    height: moderateScale(50),
-    borderRadius: moderateScale(25),
+    width: moderateScale(52),
+    height: moderateScale(52),
+    borderRadius: moderateScale(26),
   },
-  welcomeTextContainer: { flex: 1 },
+  welcomeTextContainer: { 
+    flex: 1,
+    justifyContent: 'center',
+  },
   welcomeTitle: { 
     fontSize: moderateScale(18), 
     fontWeight: '900', 
     color: '#fff',
     letterSpacing: 0.3,
+    lineHeight: moderateScale(24),
   },
   welcomeSubtitle: { 
     fontSize: moderateScale(13), 
     fontWeight: '600', 
     color: 'rgba(255,255,255,0.9)', 
-    marginTop: verticalScale(2),
+    marginTop: verticalScale(4),
+    lineHeight: moderateScale(18),
   },
   rightActions: { 
     flexDirection: 'row', 
@@ -157,6 +163,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
+    minWidth: moderateScale(44),
+    minHeight: moderateScale(44),
   },
   dot: {
     position: 'absolute',
@@ -171,6 +179,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: { 
     paddingHorizontal: moderateScale(16),
+    marginTop: verticalScale(4),
   },
   searchBar: { 
     flexDirection: 'row', 
@@ -178,14 +187,16 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(16), 
     paddingHorizontal: moderateScale(16), 
     height: verticalScale(52),
+    minHeight: verticalScale(52),
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
+    gap: moderateScale(12),
   },
   searchPlaceholder: { 
     flex: 1, 
-    marginLeft: moderateScale(12), 
     fontSize: moderateScale(14), 
     fontWeight: '500', 
     color: 'rgba(255,255,255,0.85)',
+    lineHeight: moderateScale(20),
   },
 });

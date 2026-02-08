@@ -1,19 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Video, Phone, MessageSquare, Calendar } from 'lucide-react-native';
+import { Pill, ShoppingCart, Building2, TrendingUp } from 'lucide-react-native';
 import { moderateScale, verticalScale } from '@/Helpers/Responsive';
 import { useTheme } from '@/Theme/useTheme';
 import { useNavigation } from '@react-navigation/native';
 
-export const DoctorQuickActions = () => {
+export const ClinicQuickActions = () => {
   const { theme, shadows } = useTheme();
   const navigation = useNavigation<any>();
 
   const actions = [
-    { title: 'Video', icon: Video, color: '#10B981', onPress: () => navigation.navigate('DoctorChatScreen') },
-    { title: 'Audio', icon: Phone, color: '#3B82F6', onPress: () => navigation.navigate('DoctorChatScreen') },
-    { title: 'Chat', icon: MessageSquare, color: '#F59E0B', onPress: () => navigation.navigate('DoctorChatScreen') },
-    { title: 'Schedule', icon: Calendar, color: '#4B2A99', onPress: () => navigation.navigate('DoctorAppointmentsScreen') },
+    { title: 'Products', icon: Pill, color: '#10B981', onPress: () => navigation.navigate('ClinicProductsScreen') },
+    { title: 'Orders', icon: ShoppingCart, color: '#3B82F6', onPress: () => navigation.navigate('ClinicOrdersScreen') },
+    { title: 'Factories', icon: Building2, color: '#F59E0B', onPress: () => navigation.navigate('ClinicFactoriesScreen') },
+    { title: 'Expenses', icon: TrendingUp, color: '#EF4444', onPress: () => navigation.navigate('ClinicExpensesScreen') },
   ];
 
   return (
@@ -23,6 +23,7 @@ export const DoctorQuickActions = () => {
           key={index}
           style={[styles.actionItem, { backgroundColor: theme.surface, ...shadows }]}
           onPress={action.onPress}
+          activeOpacity={0.7}
         >
           <View style={[styles.iconContainer, { backgroundColor: action.color + '15' }]}>
             <action.icon size={moderateScale(22)} color={action.color} />

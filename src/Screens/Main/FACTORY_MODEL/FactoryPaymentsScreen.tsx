@@ -70,7 +70,7 @@ interface PaymentMethodData {
   color: string;
 }
 
-const DoctorPaymentsScreen = () => {
+const FactoryPaymentsScreen = () => {
   const { theme, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
@@ -245,7 +245,7 @@ const DoctorPaymentsScreen = () => {
   const secondaryGradient = ['#4DB6AC', '#26A69A', '#00897B'];
 
   return (
-    <ScreenWrapper title="Payments & Earnings" showBack={true} scrollable={false}>
+    <ScreenWrapper title="Factory Payments" showBack={true} scrollable={false}>
       <ScrollView 
         contentContainerStyle={[
           styles.container, 
@@ -1290,4 +1290,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DoctorPaymentsScreen;
+export default FactoryPaymentsScreen;

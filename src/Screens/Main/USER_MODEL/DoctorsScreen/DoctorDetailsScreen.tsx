@@ -17,7 +17,7 @@ const DoctorDetailsScreen = () => {
   const addAppointment = useAppointmentStore((state) => state.addAppointment);
   const [modalVisible, setModalVisible] = React.useState(false);
 
-  const handleConfirmBooking = (date: string, time: string) => {
+  const handleConfirmBooking = (date: string, time: string, patientDetails?: any) => {
     const newAppointment = {
       id: Math.random().toString(36).substr(2, 9),
       doctorId: doctor.id,
@@ -27,6 +27,7 @@ const DoctorDetailsScreen = () => {
       date: date,
       time: time,
       status: 'upcoming' as const,
+      patientDetails: patientDetails || null, // Store patient details for doctor to view
     };
     
     addAppointment(newAppointment);
