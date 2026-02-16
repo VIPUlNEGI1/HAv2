@@ -7,22 +7,23 @@ import { useNavigation } from '@react-navigation/native';
 import { moderateScale, verticalScale, getStatusBarHeight } from '@/Helpers/Responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useAuthStore } from '@/hooks/useAuthStore';
 
 export const DoctorDashboardHeader = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuthStore();
   
   const statusBarHeight = getStatusBarHeight();
   const headerPaddingTop = Platform.OS === 'ios' 
     ? Math.max(insets.top, statusBarHeight) + moderateScale(8)
     : statusBarHeight + moderateScale(12);
 
-  // Mock doctor data - in real app, get from store/context
   const doctorData = {
-    name: 'Dr. Smith',
+    name: user?.name ?? 'Dr. Smith',
     specialization: 'Senior Cardiologist',
-    image: null, // Will be set from profile
+    image: user?.avatar_url ?? null,
   };
 
   return (
@@ -118,6 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', 
     justifyContent: 'center', 
     alignItems: 'center',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

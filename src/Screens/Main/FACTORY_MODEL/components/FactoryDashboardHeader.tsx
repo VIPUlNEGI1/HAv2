@@ -7,22 +7,27 @@ import { useNavigation } from '@react-navigation/native';
 import { moderateScale, verticalScale, getStatusBarHeight } from '@/Helpers/Responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useAuthStore } from '@/hooks/useAuthStore';
 
 export const FactoryDashboardHeader = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuthStore();
   
   const statusBarHeight = getStatusBarHeight();
   const headerPaddingTop = Platform.OS === 'ios' 
     ? Math.max(insets.top, statusBarHeight) + moderateScale(8)
     : statusBarHeight + moderateScale(12);
 
-  // Mock factory data - in real app, get from store/context
+  const loc = user?.location;
+  const locationStr = loc?.address
+    ?? (loc?.latitude != null ? `${loc.latitude.toFixed(4)}, ${loc.longitude?.toFixed(4)}` : null)
+    ?? 'Industrial Area, Sector 63';
   const factoryData = {
-    name: 'Pharma Factory Ltd.',
-    location: 'Industrial Area, Sector 63',
-    image: null,
+    name: user?.name ?? 'Pharma Factory Ltd.',
+    location: locationStr,
+    image: user?.avatar_url ?? null,
   };
 
   return (
@@ -119,6 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', 
     justifyContent: 'center', 
     alignItems: 'center',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

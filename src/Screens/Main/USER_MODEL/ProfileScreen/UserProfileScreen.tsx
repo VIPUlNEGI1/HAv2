@@ -21,13 +21,16 @@ import {
   Camera,
   ShieldCheck as VerifiedIcon,
   UserCircle,
+  Mail,
+  Calendar,
+  User,
+  Phone,
 } from 'lucide-react-native';
 import { useTheme } from '@/Theme/useTheme';
 import { useProfile } from './Hook/useProfile';
 import { ProfileOption } from '../components/ProfileOption';
 import { RoleSelectionModal } from '../../CommonScreens/components/RoleSelectionModal';
 import { useRoleStore } from '@/hooks/useRoleStore';
-import { useAuthStore } from '@/hooks/useAuthStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
 import type { UserRole } from '@/types';
@@ -36,14 +39,22 @@ const UserProfileScreen = () => {
   const { theme, isDarkMode, shadows } = useTheme();
   const {
     user,
+    displayName,
+    displayEmail,
+    displayPhone,
+    displayAge,
+    displayGender,
+    displayLocation,
+    savedAddressCount,
+    savingAddress,
+    handleSaveCurrentLocation,
     logout,
     toggleTheme,
     handleDeleteAccount,
     profileStats,
-    dummyAvatar,
+    avatarUrl,
   } = useProfile();
   const { currentRole, availableRoles, setRole } = useRoleStore();
-  const { user: authUser } = useAuthStore();
   const [roleModalVisible, setRoleModalVisible] = useState(false);
 
   const handleRoleSelect = (role: UserRole) => {
@@ -75,7 +86,7 @@ const UserProfileScreen = () => {
         <View style={styles.profileHeaderRow}>
           <View style={styles.avatarWrapper}>
             <View style={[styles.avatarContainer, { borderColor: theme.primary + '44' }]}>
-              <Image source={{ uri: dummyAvatar }} style={styles.avatar} />
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
             </View>
             <TouchableOpacity style={[styles.cameraBtn, { backgroundColor: theme.primary }]}>
               <Camera size={14} color="#fff" />
@@ -85,13 +96,20 @@ const UserProfileScreen = () => {
           <View style={styles.nameContainer}>
             <View style={styles.userNameRow}>
               <Text style={[styles.userName, { color: theme.text }]}>
-                {user?.name || 'Vipul Negi'}
+                {displayName || 'User'}
               </Text>
               <VerifiedIcon size={18} color={theme.primary} style={styles.verifiedIcon} />
             </View>
-            <Text style={[styles.userPhone, { color: theme.textSecondary }]}>
-              {user?.phone_number || '+91 9876543210'}
-            </Text>
+            {displayPhone ? (
+              <Text style={[styles.userPhone, { color: theme.textSecondary }]}>
+                {displayPhone}
+              </Text>
+            ) : null}
+            {displayEmail ? (
+              <Text style={[styles.userPhone, { color: theme.textSecondary }]}>
+                {displayEmail}
+              </Text>
+            ) : null}
             <View style={[styles.membershipBadge, { backgroundColor: theme.primary + '15' }]}>
               <Text style={[styles.membershipText, { color: theme.primary }]}>
                 {getRoleDisplayName(currentRole).toUpperCase()}
@@ -144,6 +162,30 @@ const UserProfileScreen = () => {
           </View>
         </View>
 
+        {/* Personal info - dynamic from user/auth */}
+        {(displayEmail || displayPhone || displayAge || displayGender || displayLocation) ? (
+          <>
+            <Text style={[styles.sectionHeaderTitle, { color: theme.textSecondary }]}>PERSONAL INFO</Text>
+            <View style={[styles.sectionCard, { backgroundColor: theme.surface, ...shadows }]}>
+              {displayEmail ? (
+                <ProfileOption index={0} icon={Mail} title="Email" subtitle={displayEmail} />
+              ) : null}
+              {displayPhone ? (
+                <ProfileOption index={1} icon={Phone} title="Mobile" subtitle={displayPhone} />
+              ) : null}
+              {displayAge ? (
+                <ProfileOption index={2} icon={Calendar} title="Age" subtitle={String(displayAge)} />
+              ) : null}
+              {displayGender ? (
+                <ProfileOption index={3} icon={User} title="Gender" subtitle={displayGender} />
+              ) : null}
+              {displayLocation ? (
+                <ProfileOption index={4} icon={MapPin} title="Location" subtitle={displayLocation} />
+              ) : null}
+            </View>
+          </>
+        ) : null}
+
         {/* Role Switching */}
         <Text style={[styles.sectionHeaderTitle, { color: theme.textSecondary }]}>ACCOUNT</Text>
         <View style={[styles.sectionCard, { backgroundColor: theme.surface, ...shadows }]}>
@@ -159,9 +201,21 @@ const UserProfileScreen = () => {
         {/* Account Settings */}
         <Text style={[styles.sectionHeaderTitle, { color: theme.textSecondary }]}>ACCOUNT SETTINGS</Text>
         <View style={[styles.sectionCard, { backgroundColor: theme.surface, ...shadows }]}>
-          <ProfileOption index={1} icon={MapPin} title="Saved Addresses" subtitle="Home, Office & others" />
-          <ProfileOption index={2} icon={CreditCard} title="Payments" subtitle="Cards, UPI & Wallets" />
-          <ProfileOption index={3} icon={Bell} title="Notifications" subtitle="Alerts, Offers & Updates" />
+          <ProfileOption
+            index={1}
+            icon={MapPin}
+            title="Saved Addresses"
+            subtitle={savedAddressCount > 0 ? `${savedAddressCount} address(es)` : 'Add home, office & others'}
+          />
+          <ProfileOption
+            index={2}
+            icon={MapPin}
+            title="Save current location"
+            subtitle={savingAddress ? 'Saving...' : 'Add your current location as address'}
+            onPress={savingAddress ? undefined : handleSaveCurrentLocation}
+          />
+          <ProfileOption index={3} icon={CreditCard} title="Payments" subtitle="Cards, UPI & Wallets" />
+          <ProfileOption index={4} icon={Bell} title="Notifications" subtitle="Alerts, Offers & Updates" />
         </View>
 
         {/* Support & Legal */}

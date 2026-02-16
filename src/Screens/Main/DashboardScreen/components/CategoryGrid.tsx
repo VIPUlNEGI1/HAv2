@@ -12,8 +12,13 @@ export const CategoryGrid = ({ categories }: { categories: any[] }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
 
-  const handlePress = (id: string) => {
-    switch (id) {
+  const handlePress = (item: { id: string; screen?: string }) => {
+    const screen = (item as { screen?: string }).screen;
+    if (screen && navigation.getState()?.routeNames?.includes(screen)) {
+      navigation.navigate(screen as any);
+      return;
+    }
+    switch (item.id) {
       case '1': navigation.navigate('MedicineScreen'); break;
       case '2': navigation.navigate('DoctorsScreen'); break;
       case '3': navigation.navigate('LabTestsScreen'); break;
@@ -22,6 +27,7 @@ export const CategoryGrid = ({ categories }: { categories: any[] }) => {
       case '6': navigation.navigate('AyurvedaScreen'); break;
       case '7': navigation.navigate('HomeCareScreen'); break;
       case '8': navigation.navigate('BabyCareScreen'); break;
+      default: navigation.navigate('MedicineScreen');
     }
   };
 
@@ -47,7 +53,7 @@ export const CategoryGrid = ({ categories }: { categories: any[] }) => {
                   transform: [{ scale: pressed ? 0.96 : 1 }]
                 }
               ]}
-              onPress={() => handlePress(item.id)}
+              onPress={() => handlePress(item)}
               hitSlop={8}
             >
               <View style={[styles.categoryIconContainer, { backgroundColor: `${item.color}10` }]}>

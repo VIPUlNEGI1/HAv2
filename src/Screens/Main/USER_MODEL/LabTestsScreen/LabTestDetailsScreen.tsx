@@ -307,6 +307,3 @@ const styles = StyleSheet.create({
 });
 
 export default LabTestDetailsScreen;
-
-export default LabTestDetailsScreen;
- 

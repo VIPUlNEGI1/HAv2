@@ -3,9 +3,9 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRoleStore } from '@/hooks/useRoleStore';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import DashboardScreen from '../../DashboardScreen/DashboardScreen';
-import DoctorDashboardScreen from '../../DOCTOR_MODEL/DoctorDashboardScreen';
-import ClinicDashboardScreen from '../../CLINIC_MODEL/ClinicDashboardScreen';
-import FactoryDashboardScreen from '../../FACTORY_MODEL/FactoryDashboardScreen';
+import DoctorDashboardScreen from '../../DOCTOR_MODEL/DoctorDashboardScreen/DoctorDashboardScreen';
+import ClinicDashboardScreen from '../../CLINIC_MODEL/ClinicDashboardScreen/ClinicDashboardScreen';
+import FactoryDashboardScreen from '../../FACTORY_MODEL/FactoryDashboardScreen/FactoryDashboardScreen';
 import type { UserRole } from '@/types';
 
 const RoleBasedDashboard = () => {

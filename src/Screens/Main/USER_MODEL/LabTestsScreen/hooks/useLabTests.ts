@@ -1,15 +1,98 @@
 import Geolocation from '@react-native-community/geolocation';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Beaker, Activity, Heart, Thermometer, FlaskConical } from 'lucide-react-native';
+import { Beaker, Activity, Heart, FlaskConical } from 'lucide-react-native';
 import { Platform, PermissionsAndroid } from 'react-native';
+import { APICall } from '@/api/client';
+import { ApiRoutes } from '@/api/routes';
+
+const CATEGORY_ICONS: Record<string, { icon: typeof FlaskConical; color: string }> = {
+  'Full Body': { icon: FlaskConical, color: '#E0F2F1' },
+  Diabetes: { icon: Activity, color: '#FFF3E0' },
+  Thyroid: { icon: Beaker, color: '#F3E5F5' },
+  Heart: { icon: Heart, color: '#FCE4EC' },
+};
+
+const getCategoryStyle = (cat: string) => CATEGORY_ICONS[cat] ?? { icon: FlaskConical, color: '#E0F2F1' };
 
 export const useLabTests = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedSpecialty] = useState('All');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
+  const [apiTests, setApiTests] = useState<Array<{
+    id: string;
+    name: string;
+    category: string;
+    tests: string;
+    price: number;
+    oldPrice: number;
+    discount: string;
+    labName: string;
+    location: { latitude: number; longitude: number };
+    rating: string;
+    requirements: string[];
+    icon: typeof FlaskConical;
+    color: string;
+    distance?: string;
+  }>>([]);
+  const [loadingTests, setLoadingTests] = useState(true);
 
-  const categories = ['All', 'Full Body', 'Diabetes', 'Heart', 'Thyroid', 'Fever'];
+  const fetchLabTests = useCallback(async () => {
+    setLoadingTests(true);
+    const params: Record<string, string> = {};
+    if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory;
+    if (searchQuery.trim()) params.search = searchQuery.trim();
+    const res = await APICall<{ data?: Array<{
+      _id?: string;
+      name?: string;
+      category?: string;
+      description?: string;
+      price?: number;
+      lab_name?: string;
+      lab_address?: string;
+      location?: { latitude?: number; longitude?: number };
+      rating?: number;
+    }> }>('get', params, ApiRoutes.labTests.list, {}, undefined);
+    if (res.status === 200 && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+      setApiTests(
+        res.data.data.map((t) => {
+          const cat = t.category ?? 'General';
+          const style = getCategoryStyle(cat);
+          const price = Number(t.price ?? 0);
+          const oldPrice = Math.round(price * 1.5);
+          return {
+            id: String(t._id ?? ''),
+            name: t.name ?? 'Lab Test',
+            category: cat,
+            tests: t.description ?? 'Tests included',
+            price,
+            oldPrice,
+            discount: oldPrice > 0 ? `${Math.round((1 - price / oldPrice) * 100)}% OFF` : '',
+            labName: t.lab_name ?? 'Lab',
+            location: t.location?.latitude != null && t.location?.longitude != null
+              ? { latitude: t.location.latitude, longitude: t.location.longitude }
+              : { latitude: 0, longitude: 0 },
+            rating: String(t.rating ?? 4.5),
+            requirements: [],
+            icon: style.icon,
+            color: style.color,
+          };
+        })
+      );
+    } else {
+      setApiTests([]);
+    }
+    setLoadingTests(false);
+  }, [selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    fetchLabTests();
+  }, [fetchLabTests]);
+
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(apiTests.map((t) => t.category).filter(Boolean)));
+    return ['All', ...cats.sort()];
+  }, [apiTests]);
 
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -59,91 +142,6 @@ export const useLabTests = () => {
     requestLocationPermission();
   }, []);
 
-  const allTests = useMemo(() => [
-    { 
-      id: '1', 
-      name: 'Full Body Checkup', 
-      category: 'Full Body',
-      tests: '64 Tests included', 
-      price: 799, 
-      oldPrice: 1599, 
-      discount: '50% OFF',
-      labName: 'Apollo Diagnostics, Dehradun',
-      location: { latitude: 37.421998333333335, longitude: -122.084 }, // Rajpur Road
-      rating: '4.8',
-      requirements: ['Fasting required (10-12 hrs)', 'Water allowed'],
-      icon: FlaskConical,
-      color: '#E0F2F1',
-      details: [
-        { title: 'Liver Function Test', count: 11 },
-        { title: 'Kidney Function Test', count: 8 },
-        { title: 'Lipid Profile', count: 7 },
-        { title: 'Thyroid Profile', count: 3 },
-        { title: 'Complete Hemogram', count: 24 }
-      ]
-    },
-    { 
-      id: '2', 
-      name: 'Advanced Diabetes Screen', 
-      category: 'Diabetes',
-      tests: '12 Tests included', 
-      price: 499, 
-      oldPrice: 999, 
-      discount: '50% OFF',
-      labName: 'Dr. Lal PathLabs, Dehradun',
-      location: { latitude: 30.3244, longitude: 78.0465 }, // Karanpur
-      rating: '4.9',
-      requirements: ['Fasting required (8 hrs)'],
-      icon: Activity,
-      color: '#FFF3E0',
-      details: [
-        { title: 'HbA1c', count: 1 },
-        { title: 'Blood Sugar Fasting', count: 1 },
-        { title: 'Urine Microalbumin', count: 1 }
-      ]
-    },
-    { 
-      id: '3', 
-      name: 'Thyroid Care', 
-      category: 'Thyroid',
-      tests: '3 Tests included', 
-      price: 399, 
-      oldPrice: 799, 
-      discount: '40% OFF',
-      labName: 'Max Super Speciality Hospital, Dehradun',
-      location: { latitude: 30.3412, longitude: 78.0911 }, // Malsi
-      rating: '4.7',
-      requirements: ['No fasting required'],
-      icon: Beaker,
-      color: '#F3E5F5',
-      details: [
-        { title: 'T3', count: 1 },
-        { title: 'T4', count: 1 },
-        { title: 'TSH Ultra-sensitive', count: 1 }
-      ]
-    },
-    { 
-      id: '4', 
-      name: 'Healthy Heart Package', 
-      category: 'Heart',
-      tests: '15 Tests included', 
-      price: 1299, 
-      oldPrice: 2499, 
-      discount: '48% OFF',
-      labName: 'Synergy Hospital, Dehradun',
-      location: { latitude: 30.3321, longitude: 77.9982 }, // Ballupur
-      rating: '4.8',
-      requirements: ['Fasting required (12 hrs)'],
-      icon: Heart,
-      color: '#FCE4EC',
-      details: [
-        { title: 'ECG', count: 1 },
-        { title: 'Lipid Profile', count: 7 },
-        { title: 'Cardiac Markers', count: 3 }
-      ]
-    },
-  ], []);
-
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371; // Radius of the earth in km
     const dLat = deg2rad(lat2 - lat1);
@@ -163,42 +161,47 @@ export const useLabTests = () => {
   };
 
   const filteredTests = useMemo(() => {
-    if (!userLocation) return [];
-
-    console.log('📍 User Location:', userLocation);
-
-    return allTests
-      .map(test => {
-        const dist = calculateDistance(
-          userLocation.latitude, 
-          userLocation.longitude, 
-          test.location.latitude, 
-          test.location.longitude
-        );
-        console.log(`🧪 Lab: ${test.labName}, Distance: ${dist}km`);
-        return { ...test, distance: dist };
-      })
-      .filter(test => {
-        const matchesSearch = test.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             test.labName.toLowerCase().includes(searchQuery.toLowerCase());
+    let list = apiTests
+      .filter((test) => {
+        const matchesSearch =
+          !searchQuery.trim() ||
+          test.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          test.labName.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategory === 'All' || test.category === selectedCategory;
-        
-        // Increased threshold to 50km to ensure Dehradun labs show up even if user is slightly outside city center
-        const isNearby = parseFloat(test.distance) < 50; 
-        
-        return matchesSearch && matchesCategory && isNearby;
+        return matchesSearch && matchesCategory;
       })
-      .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
-  }, [allTests, searchQuery, selectedCategory, userLocation]);
+      .map((test) => {
+        const dist =
+          userLocation && test.location?.latitude != null && test.location?.longitude != null
+            ? calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                test.location.latitude,
+                test.location.longitude
+              )
+            : '—';
+        return { ...test, distance: dist };
+      });
+    if (userLocation && list.some((t) => t.distance !== '—')) {
+      list = [...list].sort((a, b) => {
+        const da = a.distance === '—' ? 9999 : parseFloat(a.distance);
+        const db = b.distance === '—' ? 9999 : parseFloat(b.distance);
+        return da - db;
+      });
+    }
+    return list;
+  }, [apiTests, searchQuery, selectedCategory, userLocation]);
 
   return {
     searchQuery,
     setSearchQuery,
     selectedCategory,
     setSelectedSpecialty,
-    categories,
+    categories: categories.length > 1 ? categories : ['All', 'Full Body', 'Diabetes', 'Heart', 'Thyroid'],
     filteredTests,
     loadingLocation,
-    userLocation
+    loadingTests,
+    userLocation,
+    onRefresh: fetchLabTests,
   };
 };

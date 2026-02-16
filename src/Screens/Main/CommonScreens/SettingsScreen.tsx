@@ -38,14 +38,20 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Toasts, toast } from '@backpackapp-io/react-native-toast';
 import { useNavigation } from '@react-navigation/native';
 import { useRoleStore } from '@/hooks/useRoleStore';
+import { useAuthStore } from '@/hooks/useAuthStore';
 import type { UserRole } from '@/types';
+import { RoleSelectionModal } from './components/RoleSelectionModal';
+
+const roleDisplayNames: Record<UserRole, string> = { user: 'User', doctor: 'Doctor', clinic: 'Clinic', factory: 'Factory' };
 
 const SettingsScreen = () => {
   const { theme, shadows, isDarkMode, toggleTheme } = useTheme();
   const navigation = useNavigation<any>();
-  const { currentRole } = useRoleStore();
+  const { currentRole, setRole, availableRoles } = useRoleStore();
+  const { user, logout, token } = useAuthStore();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [roleModalVisible, setRoleModalVisible] = useState(false);
 
   const handleImagePicker = () => {
     Alert.alert(
@@ -93,6 +99,59 @@ const SettingsScreen = () => {
     );
   };
 
+  const handleRoleSelect = async (role: UserRole) => {
+    if (role === currentRole) {
+      setRoleModalVisible(false);
+      return;
+    }
+    const roleName = roleDisplayNames[role];
+    Alert.alert(
+      'Switch Role',
+      `Are you sure you want to switch to ${roleName}? You will receive a confirmation email.`,
+      [
+        { text: 'Cancel', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Switch',
+          onPress: async () => {
+            if (!token) {
+              setRole(role);
+              setRoleModalVisible(false);
+              toast.success(`Role switched to ${roleName}`);
+              return;
+            }
+            try {
+              const { APICall } = await import('@/api/client');
+              const { ApiRoutes } = await import('@/api/routes');
+              const res = await APICall<{ data?: { current_role?: string } }>(
+                'post',
+                { role },
+                ApiRoutes.roles.switch,
+                {},
+                token
+              );
+              if (res.status === 200) {
+                setRole(role);
+                setRoleModalVisible(false);
+                toast.success(`Role switched to ${roleName}. Check your email for confirmation.`);
+              } else {
+                const msg = (res.data as { message?: string })?.message || 'Could not switch role.';
+                toast.error(msg);
+              }
+            } catch {
+              toast.error('Could not switch role. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getRoleDisplayName = (role: UserRole | null) => {
+    if (!role) return 'Select Role';
+    const names: Record<UserRole, string> = { user: 'User', doctor: 'Doctor', clinic: 'Clinic', factory: 'Factory' };
+    return names[role] || role;
+  };
+
   const handleLogout = () => {
     Alert.alert(
       'Logout',
@@ -104,7 +163,7 @@ const SettingsScreen = () => {
           style: 'destructive',
           onPress: () => {
             toast.success('Logged out successfully');
-            // In real app, handle logout
+            logout();
           },
         },
       ]
@@ -220,12 +279,12 @@ const SettingsScreen = () => {
               </TouchableOpacity>
               <View style={styles.profileInfo}>
                 <Text style={[styles.profileName, { color: theme.text }]}>
-                  {currentRole === 'doctor' ? 'Dr. Smith' : 
+                  {user?.name ?? (currentRole === 'doctor' ? 'Dr. Smith' : 
                    currentRole === 'clinic' ? 'City Clinic' :
-                   currentRole === 'factory' ? 'MedFactory' : 'User Name'}
+                   currentRole === 'factory' ? 'MedFactory' : 'User')}
                 </Text>
                 <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>
-                  user@example.com
+                  {user?.email ?? user?.phone_number ?? '—'}
                 </Text>
               </View>
               <TouchableOpacity
@@ -252,14 +311,14 @@ const SettingsScreen = () => {
             <SettingItem
               icon={Mail}
               title="Email"
-              subtitle="user@example.com"
+              subtitle={user?.email ?? 'Add email'}
               onPress={() => {}}
             />
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <SettingItem
               icon={Phone}
               title="Phone Number"
-              subtitle="+91 9876543210"
+              subtitle={user?.phone_number ?? 'Add phone'}
               onPress={() => {}}
             />
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
@@ -293,7 +352,7 @@ const SettingsScreen = () => {
           </Animated.View>
         )}
 
-        {/* Preferences */}
+        {/* Preferences - Theme, Role, Notifications */}
         <Animated.View entering={FadeInDown.delay(200)}>
           <SettingSection title="PREFERENCES">
             <SettingItem
@@ -309,6 +368,13 @@ const SettingsScreen = () => {
                 />
               }
               showChevron={false}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <SettingItem
+              icon={currentRole === 'doctor' ? Stethoscope : currentRole === 'clinic' ? Building2 : currentRole === 'factory' ? Factory : User}
+              title="Switch Role"
+              subtitle={`Current: ${getRoleDisplayName(currentRole)}`}
+              onPress={() => setRoleModalVisible(true)}
             />
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <SettingItem
@@ -375,6 +441,14 @@ const SettingsScreen = () => {
 
         <View style={{ height: verticalScale(30) }} />
       </ScrollView>
+
+      <RoleSelectionModal
+        visible={roleModalVisible}
+        onClose={() => setRoleModalVisible(false)}
+        onRoleSelect={handleRoleSelect}
+        availableRoles={availableRoles.length > 0 ? availableRoles : ['user', 'doctor', 'clinic', 'factory']}
+        closeOnSelect={false}
+      />
       <Toasts />
     </ScreenWrapper>
   );

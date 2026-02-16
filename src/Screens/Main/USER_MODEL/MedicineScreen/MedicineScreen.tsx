@@ -5,7 +5,7 @@ import { CategoryFilters } from './components/CategoryFilters';
 import { PrescriptionCard } from './components/PrescriptionCard';
 import { MedicineCard } from './components/MedicineCard';
 import { MedicineFilterModal } from './components/MedicineFilterModal';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { CustomRefresh } from '@/Components/CustomRefresh';
 import AppSeparator from '@/Components/AppSeparator/AppSeparator';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
@@ -26,7 +26,8 @@ const MedicineScreen = () => {
     setFilterModalVisible,
     filters,
     cart,
-    updateCart 
+    updateCart,
+    loading,
   } = useMedicine();
 
   const cartCount = Number(Object.values(cart).reduce((acc: number, curr) => acc + (curr as number), 0));
@@ -48,25 +49,31 @@ const MedicineScreen = () => {
         onFilterPress={() => setFilterModalVisible(true)}
       />
 
-      <FlatList
-        data={filteredMedicines}
-        renderItem={({ item, index }) => (
-          <MedicineCard 
-            item={item} 
-            index={index} 
-            quantity={cart[item.id] || 0} 
-            onUpdateCart={updateCart} 
-          />
-        )}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.list}
-        columnWrapperStyle={styles.columnWrapper}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<CustomRefresh refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={<PrescriptionCard />}
-        ListFooterComponent={<View style={styles.footerSpacer} />}
-      />
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredMedicines}
+          renderItem={({ item, index }) => (
+            <MedicineCard 
+              item={item} 
+              index={index} 
+              quantity={cart[item.id] || 0} 
+              onUpdateCart={updateCart} 
+            />
+          )}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          contentContainerStyle={styles.list}
+          columnWrapperStyle={styles.columnWrapper}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<CustomRefresh refreshing={refreshing} onRefresh={onRefresh} />}
+          ListHeaderComponent={<PrescriptionCard />}
+          ListFooterComponent={<View style={styles.footerSpacer} />}
+        />
+      )}
 
       <MedicineFilterModal 
         visible={filterModalVisible}
@@ -79,10 +86,11 @@ const MedicineScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1,   }, // Added padding for persistent tabs
+  container: { flex: 1 },
   list: { padding: 16 },
   columnWrapper: { justifyContent: 'space-between' },
   footerSpacer: { height: 40 },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
 
 export default MedicineScreen;

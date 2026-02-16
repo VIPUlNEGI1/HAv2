@@ -1,12 +1,39 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions, TextInput, Image, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  Dimensions,
+  Alert,
+  Platform,
+  KeyboardAvoidingView,
+  ActivityIndicator,
+} from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
-import { X, Calendar as CalendarIcon, Clock, CheckCircle2, Upload, FileText, Image as ImageIcon, XCircle } from 'lucide-react-native';
-import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import {
+  X,
+  Calendar as CalendarIcon,
+  Clock,
+  CheckCircle2,
+  Upload,
+  FileText,
+  Image as ImageIcon,
+  XCircle,
+  ChevronRight,
+  ChevronLeft,
+  Stethoscope,
+} from 'lucide-react-native';
 import { launchImageLibrary, launchCamera, ImagePickerResponse, MediaType } from 'react-native-image-picker';
+import Animated, { FadeInDown, FadeInRight, FadeInUp } from 'react-native-reanimated';
 import { moderateScale, verticalScale } from '@/Helpers/Responsive';
+import { StepperFormContainer, type StepperFormStep } from '@/Components/common';
+import { FormInput } from '@/Components/common';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const SHEET_HEIGHT = height * 0.88;
 
 const TIME_SLOTS = [
   { time: '09:00 AM', available: true },
@@ -20,11 +47,11 @@ const TIME_SLOTS = [
 ];
 
 const DAYS = [
-  { day: 'Mon', date: '24', full: 'Oct 24, 2026' },
-  { day: 'Tue', date: '25', full: 'Oct 25, 2026' },
-  { day: 'Wed', date: '26', full: 'Oct 26, 2026' },
-  { day: 'Thu', date: '27', full: 'Oct 27, 2026' },
-  { day: 'Fri', date: '28', full: 'Oct 28, 2026' },
+  { day: 'Mon', date: '24', full: 'Oct 24, 2026', dateISO: '2026-10-24' },
+  { day: 'Tue', date: '25', full: 'Oct 25, 2026', dateISO: '2026-10-25' },
+  { day: 'Wed', date: '26', full: 'Oct 26, 2026', dateISO: '2026-10-26' },
+  { day: 'Thu', date: '27', full: 'Oct 27, 2026', dateISO: '2026-10-27' },
+  { day: 'Fri', date: '28', full: 'Oct 28, 2026', dateISO: '2026-10-28' },
 ];
 
 interface PatientDetails {
@@ -36,11 +63,20 @@ interface PatientDetails {
   reports: Array<{ id: string; name: string; uri: string }>;
 }
 
-export const BookingModal = ({ visible, onClose, onConfirm, doctorName }: any) => {
+export interface BookingModalProps {
+  visible: boolean;
+  onClose: () => void;
+  /** (dateISO, dateDisplay, time, patientDetails) - dateISO for API (YYYY-MM-DD), dateDisplay for UI */
+  onConfirm: (dateISO: string, dateDisplay: string, time: string, patientDetails?: PatientDetails) => void;
+  doctorName: string;
+  loading?: boolean;
+}
+
+export const BookingModal = ({ visible, onClose, onConfirm, doctorName, loading = false }: BookingModalProps) => {
   const { theme, shadows } = useTheme();
+  const [currentStep, setCurrentStep] = useState(0);
   const [selectedDay, setSelectedDay] = useState(DAYS[0]);
   const [selectedTime, setSelectedTime] = useState('');
-  const [showPatientDetails, setShowPatientDetails] = useState(false);
   const [patientDetails, setPatientDetails] = useState<PatientDetails>({
     chiefComplaint: '',
     symptoms: '',
@@ -51,261 +87,361 @@ export const BookingModal = ({ visible, onClose, onConfirm, doctorName }: any) =
   });
 
   const handleImagePicker = () => {
-    Alert.alert(
-      'Select Report',
-      'Choose an option',
-      [
-        { text: 'Camera', onPress: () => openCamera() },
-        { text: 'Gallery', onPress: () => openGallery() },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    Alert.alert('Select Report', 'Choose an option', [
+      { text: 'Camera', onPress: () => openCamera() },
+      { text: 'Gallery', onPress: () => openGallery() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const openCamera = () => {
     launchCamera({ mediaType: 'photo' as MediaType, quality: 0.8 }, (response: ImagePickerResponse) => {
-      if (response.assets && response.assets[0]) {
-        const newReport = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: `Report_${Date.now()}.jpg`,
-          uri: response.assets[0].uri || '',
-        };
-        setPatientDetails({
-          ...patientDetails,
-          reports: [...patientDetails.reports, newReport],
-        });
+      if (response.assets?.[0]) {
+        setPatientDetails((prev) => ({
+          ...prev,
+          reports: [
+            ...prev.reports,
+            {
+              id: Math.random().toString(36).slice(2, 9),
+              name: `Report_${Date.now()}.jpg`,
+              uri: response.assets![0].uri || '',
+            },
+          ],
+        }));
       }
     });
   };
 
   const openGallery = () => {
     launchImageLibrary({ mediaType: 'photo' as MediaType, quality: 0.8 }, (response: ImagePickerResponse) => {
-      if (response.assets && response.assets[0]) {
-        const newReport = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: response.assets[0].fileName || `Report_${Date.now()}.jpg`,
-          uri: response.assets[0].uri || '',
-        };
-        setPatientDetails({
-          ...patientDetails,
-          reports: [...patientDetails.reports, newReport],
-        });
+      if (response.assets?.[0]) {
+        setPatientDetails((prev) => ({
+          ...prev,
+          reports: [
+            ...prev.reports,
+            {
+              id: Math.random().toString(36).slice(2, 9),
+              name: response.assets![0].fileName || `Report_${Date.now()}.jpg`,
+              uri: response.assets![0].uri || '',
+            },
+          ],
+        }));
       }
     });
   };
 
   const removeReport = (id: string) => {
-    setPatientDetails({
-      ...patientDetails,
-      reports: patientDetails.reports.filter(r => r.id !== id),
-    });
+    setPatientDetails((prev) => ({ ...prev, reports: prev.reports.filter((r) => r.id !== id) }));
+  };
+
+  const canGoNext = () => {
+    if (currentStep === 0) return !!selectedTime;
+    return true;
+  };
+
+  const handleNext = () => {
+    if (currentStep < 2) setCurrentStep((s) => s + 1);
+    else handleConfirm();
   };
 
   const handleConfirm = () => {
     if (!selectedTime) return;
-    onConfirm(selectedDay.full, selectedTime, patientDetails);
+    onConfirm(selectedDay.dateISO, selectedDay.full, selectedTime, patientDetails);
   };
 
-  return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <Animated.View entering={FadeIn} style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-          <TouchableOpacity style={styles.flex} onPress={onClose} />
-        </Animated.View>
-        
-        <Animated.View entering={SlideInUp} style={[styles.modalContainer, { backgroundColor: theme.surface }]}>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.text }]}>Select Slot</Text>
-            <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: theme.background }]}>
-              <X size={20} color={theme.text} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Consultation with {doctorName}</Text>
-
-            {/* Date Selection */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <CalendarIcon size={18} color={theme.primary} />
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>Select Date</Text>
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysList}>
-                {DAYS.map((item) => (
-                  <TouchableOpacity 
-                    key={item.date}
+  const steps: StepperFormStep[] = [
+    {
+      key: 'slot',
+      title: 'Date & Time',
+      subtitle: 'Select slot',
+      content: (
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.stepScroll}>
+          <Animated.View entering={FadeInDown.duration(280).springify()} style={styles.section}>
+            <Animated.View entering={FadeInRight.delay(80).duration(220)} style={[styles.sectionHeader, { backgroundColor: theme.primary + '12', borderLeftColor: theme.primary }]}>
+              <CalendarIcon size={18} color={theme.primary} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Select Date</Text>
+            </Animated.View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysList}>
+              {DAYS.map((item, i) => (
+                <Animated.View key={item.date} entering={FadeInUp.delay(120 + i * 50).duration(220).springify()}>
+                  <TouchableOpacity
                     onPress={() => setSelectedDay(item)}
                     style={[
-                      styles.dayCard, 
-                      { backgroundColor: selectedDay.date === item.date ? theme.primary : theme.background },
-                      selectedDay.date === item.date && shadows
+                      styles.dayCard,
+                      {
+                        backgroundColor: selectedDay.date === item.date ? theme.primary : theme.background,
+                        borderColor: selectedDay.date === item.date ? theme.primary : theme.border,
+                      },
+                      selectedDay.date === item.date && shadows,
                     ]}
                   >
-                    <Text style={[styles.dayText, { color: selectedDay.date === item.date ? '#fff' : theme.textSecondary }]}>{item.day}</Text>
-                    <Text style={[styles.dateText, { color: selectedDay.date === item.date ? '#fff' : theme.text }]}>{item.date}</Text>
+                    <Text style={[styles.dayText, { color: selectedDay.date === item.date ? '#fff' : theme.textSecondary }]}>
+                      {item.day}
+                    </Text>
+                    <Text style={[styles.dateText, { color: selectedDay.date === item.date ? '#fff' : theme.text }]}>
+                      {item.date}
+                    </Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Time Selection */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Clock size={18} color={theme.primary} />
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>Available Time Slots</Text>
-              </View>
-              <View style={styles.timeGrid}>
-                {TIME_SLOTS.map((slot) => (
-                  <TouchableOpacity 
-                    key={slot.time}
+                </Animated.View>
+              ))}
+            </ScrollView>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.delay(200).duration(280).springify()} style={styles.section}>
+            <Animated.View entering={FadeInRight.delay(260).duration(220)} style={[styles.sectionHeader, { backgroundColor: theme.primary + '12', borderLeftColor: theme.primary }]}>
+              <Clock size={18} color={theme.primary} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Time Slots</Text>
+            </Animated.View>
+            <View style={styles.timeGrid}>
+              {TIME_SLOTS.map((slot, i) => (
+                <Animated.View key={slot.time} entering={FadeInDown.delay(320 + i * 40).duration(200)}>
+                  <TouchableOpacity
                     disabled={!slot.available}
                     onPress={() => setSelectedTime(slot.time)}
                     style={[
                       styles.timeChip,
-                      { 
-                        backgroundColor: selectedTime === slot.time ? theme.primary : theme.background,
-                        opacity: slot.available ? 1 : 0.4,
-                        borderColor: selectedTime === slot.time ? theme.primary : theme.border
-                      }
+                      {
+                        backgroundColor: selectedTime === slot.time ? theme.primary : theme.surface,
+                        borderColor: selectedTime === slot.time ? theme.primary : theme.border,
+                        opacity: slot.available ? 1 : 0.45,
+                      },
                     ]}
                   >
-                    <Text style={[
-                      styles.timeText, 
-                      { color: selectedTime === slot.time ? '#fff' : (slot.available ? theme.text : theme.textSecondary) }
-                    ]}>
+                    <Text
+                      style={[
+                        styles.timeText,
+                        {
+                          color: selectedTime === slot.time ? '#fff' : slot.available ? theme.text : theme.textSecondary,
+                        },
+                      ]}
+                    >
                       {slot.time}
                     </Text>
-                    {!slot.available && <Text style={styles.bookedText}>Full</Text>}
+                    {!slot.available && <Text style={[styles.bookedText, { color: theme.error }]}>Full</Text>}
                   </TouchableOpacity>
+                </Animated.View>
+              ))}
+            </View>
+          </Animated.View>
+        </ScrollView>
+      ),
+    },
+    {
+      key: 'details',
+      title: 'Patient Details',
+      subtitle: 'Optional',
+      content: (
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.stepScroll}>
+          <Animated.View entering={FadeInDown.duration(260).springify()} style={[styles.sectionHeader, { backgroundColor: theme.primary + '12', borderLeftColor: theme.primary, marginBottom: moderateScale(16) }]}>
+            <FileText size={18} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Medical information (optional)</Text>
+          </Animated.View>
+          <FormInput
+            variant="stepper"
+            label="Chief Complaint"
+            placeholder="Describe your main concern..."
+            value={patientDetails.chiefComplaint}
+            onChangeText={(text) => setPatientDetails((prev) => ({ ...prev, chiefComplaint: text }))}
+            multiline
+            numberOfLines={3}
+          />
+          <FormInput
+            variant="stepper"
+            label="Symptoms"
+            placeholder="List your symptoms..."
+            value={patientDetails.symptoms}
+            onChangeText={(text) => setPatientDetails((prev) => ({ ...prev, symptoms: text }))}
+            multiline
+            numberOfLines={2}
+          />
+          <FormInput
+            variant="stepper"
+            label="Medical History"
+            placeholder="Any previous medical conditions..."
+            value={patientDetails.medicalHistory}
+            onChangeText={(text) => setPatientDetails((prev) => ({ ...prev, medicalHistory: text }))}
+            multiline
+            numberOfLines={2}
+          />
+          <FormInput
+            variant="stepper"
+            label="Current Medications"
+            placeholder="List current medications..."
+            value={patientDetails.currentMedications}
+            onChangeText={(text) => setPatientDetails((prev) => ({ ...prev, currentMedications: text }))}
+            multiline
+            numberOfLines={2}
+          />
+          <FormInput
+            variant="stepper"
+            label="Allergies"
+            placeholder="Any known allergies..."
+            value={patientDetails.allergies}
+            onChangeText={(text) => setPatientDetails((prev) => ({ ...prev, allergies: text }))}
+            multiline
+            numberOfLines={2}
+          />
+          <View style={styles.inputGroup}>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Medical Reports</Text>
+            <TouchableOpacity
+              onPress={handleImagePicker}
+              style={[styles.uploadBtn, { backgroundColor: theme.primary + '15', borderColor: theme.primary }]}
+            >
+              <Upload size={18} color={theme.primary} />
+              <Text style={[styles.uploadBtnText, { color: theme.primary }]}>Upload Report</Text>
+            </TouchableOpacity>
+            {patientDetails.reports.length > 0 && (
+              <View style={styles.reportsList}>
+                {patientDetails.reports.map((report) => (
+                  <View key={report.id} style={[styles.reportItem, { backgroundColor: theme.background }]}>
+                    <ImageIcon size={16} color={theme.primary} />
+                    <Text style={[styles.reportItemText, { color: theme.text }]} numberOfLines={1}>
+                      {report.name}
+                    </Text>
+                    <TouchableOpacity onPress={() => removeReport(report.id)}>
+                      <XCircle size={16} color={theme.error || '#EF4444'} />
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
+            )}
+          </View>
+        </ScrollView>
+      ),
+    },
+    {
+      key: 'review',
+      title: 'Review',
+      subtitle: 'Confirm',
+      content: (
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.stepScroll}>
+          <Animated.View entering={FadeInDown.duration(260).springify()} style={[styles.reviewCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+            <View style={styles.reviewRow}>
+              <Stethoscope size={18} color={theme.primary} />
+              <Text style={[styles.reviewLabel, { color: theme.textSecondary }]}>Doctor</Text>
             </View>
+            <Text style={[styles.reviewValue, { color: theme.text }]}>{doctorName}</Text>
+          </Animated.View>
+          <Animated.View entering={FadeInDown.delay(80).duration(260).springify()} style={[styles.reviewCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+            <View style={styles.reviewRow}>
+              <CalendarIcon size={18} color={theme.primary} />
+              <Text style={[styles.reviewLabel, { color: theme.textSecondary }]}>Date & Time</Text>
+            </View>
+            <Text style={[styles.reviewValue, { color: theme.text }]}>
+              {selectedDay.full} · {selectedTime}
+            </Text>
+          </Animated.View>
+          {(patientDetails.chiefComplaint || patientDetails.symptoms) && (
+            <Animated.View entering={FadeInDown.delay(160).duration(260).springify()} style={[styles.reviewCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <View style={styles.reviewRow}>
+                <FileText size={18} color={theme.primary} />
+                <Text style={[styles.reviewLabel, { color: theme.textSecondary }]}>Notes</Text>
+              </View>
+              <Text style={[styles.reviewValue, { color: theme.text }]} numberOfLines={4}>
+                {patientDetails.chiefComplaint || patientDetails.symptoms || '—'}
+              </Text>
+            </Animated.View>
+          )}
+        </ScrollView>
+      ),
+    },
+  ];
 
-            {/* Patient Details Section */}
-            <View style={styles.section}>
-              <TouchableOpacity 
-                onPress={() => setShowPatientDetails(!showPatientDetails)}
-                style={[styles.patientDetailsToggle, { backgroundColor: theme.background }]}
-              >
-                <View style={styles.sectionHeader}>
-                  <FileText size={18} color={theme.primary} />
-                  <Text style={[styles.sectionTitle, { color: theme.text }]}>Patient Details (Optional)</Text>
-                </View>
-                <Text style={[styles.toggleText, { color: theme.textSecondary }]}>
-                  {showPatientDetails ? 'Hide' : 'Add'} Details
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={styles.overlay}>
+        <TouchableOpacity
+          style={[styles.backdrop, { backgroundColor: theme.backdrop || 'rgba(0,0,0,0.5)' }]}
+          onPress={onClose}
+          activeOpacity={1}
+        />
+
+        <View style={[styles.sheet, { backgroundColor: theme.surface, height: SHEET_HEIGHT }]}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: theme.border }]}>
+            <View style={styles.headerLeft}>
+              <View style={[styles.titleIconWrap, { backgroundColor: theme.primary + '18' }]}>
+                <Stethoscope size={22} color={theme.primary} />
+              </View>
+              <View style={styles.headerTextWrap}>
+                <Text style={[styles.title, { color: theme.text }]}>Book Appointment</Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary }]} numberOfLines={1}>
+                  with {doctorName}
                 </Text>
-              </TouchableOpacity>
-
-              {showPatientDetails && (
-                <View style={styles.patientDetailsForm}>
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Chief Complaint *</Text>
-                    <TextInput
-                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                      placeholder="Describe your main concern..."
-                      placeholderTextColor={theme.textSecondary}
-                      value={patientDetails.chiefComplaint}
-                      onChangeText={(text) => setPatientDetails({ ...patientDetails, chiefComplaint: text })}
-                      multiline
-                      numberOfLines={3}
-                    />
-                  </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Symptoms</Text>
-                    <TextInput
-                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                      placeholder="List your symptoms..."
-                      placeholderTextColor={theme.textSecondary}
-                      value={patientDetails.symptoms}
-                      onChangeText={(text) => setPatientDetails({ ...patientDetails, symptoms: text })}
-                      multiline
-                      numberOfLines={2}
-                    />
-                  </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Medical History</Text>
-                    <TextInput
-                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                      placeholder="Any previous medical conditions..."
-                      placeholderTextColor={theme.textSecondary}
-                      value={patientDetails.medicalHistory}
-                      onChangeText={(text) => setPatientDetails({ ...patientDetails, medicalHistory: text })}
-                      multiline
-                      numberOfLines={2}
-                    />
-                  </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Current Medications</Text>
-                    <TextInput
-                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                      placeholder="List current medications..."
-                      placeholderTextColor={theme.textSecondary}
-                      value={patientDetails.currentMedications}
-                      onChangeText={(text) => setPatientDetails({ ...patientDetails, currentMedications: text })}
-                      multiline
-                      numberOfLines={2}
-                    />
-                  </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Allergies</Text>
-                    <TextInput
-                      style={[styles.textInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                      placeholder="Any known allergies..."
-                      placeholderTextColor={theme.textSecondary}
-                      value={patientDetails.allergies}
-                      onChangeText={(text) => setPatientDetails({ ...patientDetails, allergies: text })}
-                      multiline
-                      numberOfLines={2}
-                    />
-                  </View>
-
-                  {/* Reports Upload */}
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Medical Reports</Text>
-                    <TouchableOpacity
-                      onPress={handleImagePicker}
-                      style={[styles.uploadBtn, { backgroundColor: theme.primary + '15', borderColor: theme.primary }]}
-                    >
-                      <Upload size={18} color={theme.primary} />
-                      <Text style={[styles.uploadBtnText, { color: theme.primary }]}>Upload Report</Text>
-                    </TouchableOpacity>
-
-                    {patientDetails.reports.length > 0 && (
-                      <View style={styles.reportsList}>
-                        {patientDetails.reports.map((report) => (
-                          <View key={report.id} style={[styles.reportItem, { backgroundColor: theme.background }]}>
-                            <ImageIcon size={16} color={theme.primary} />
-                            <Text style={[styles.reportItemText, { color: theme.text }]} numberOfLines={1}>
-                              {report.name}
-                            </Text>
-                            <TouchableOpacity onPress={() => removeReport(report.id)}>
-                              <XCircle size={16} color={theme.error || '#EF4444'} />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                </View>
-              )}
+              </View>
             </View>
-          </ScrollView>
-
-          <View style={[styles.footer, { borderTopColor: theme.border }]}>
-            <TouchableOpacity 
-              disabled={!selectedTime}
-              onPress={handleConfirm}
-              style={[styles.confirmBtn, { backgroundColor: selectedTime ? theme.primary : theme.border }]}
+            <TouchableOpacity
+              onPress={onClose}
+              style={[styles.closeBtn, { backgroundColor: theme.background }]}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <CheckCircle2 size={20} color="#fff" />
-              <Text style={styles.confirmBtnText}>Confirm Booking</Text>
+              <X size={22} color={theme.text} />
             </TouchableOpacity>
           </View>
-        </Animated.View>
+
+          {/* Content + Footer */}
+          <KeyboardAvoidingView
+            style={styles.main}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          >
+            <View style={styles.content}>
+              <StepperFormContainer
+                steps={steps}
+                currentStep={currentStep}
+                transitionDirection="vertical"
+              />
+            </View>
+
+            <View style={[styles.footer, { borderTopColor: theme.border }]}>
+              <View style={styles.footerRow}>
+                {currentStep > 0 ? (
+                  <TouchableOpacity
+                    onPress={() => setCurrentStep((s) => s - 1)}
+                    style={[styles.secondaryBtn, { borderColor: theme.border }]}
+                    activeOpacity={0.8}
+                  >
+                    <ChevronLeft size={20} color={theme.primary} />
+                    <Text style={[styles.secondaryBtnText, { color: theme.primary }]}>Back</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={[styles.secondaryBtnPlaceholder]} />
+                )}
+                <TouchableOpacity
+                  onPress={handleNext}
+                  disabled={(currentStep === 0 && !selectedTime) || loading}
+                  style={[
+                    styles.confirmBtn,
+                    {
+                      backgroundColor: canGoNext() && !loading ? theme.primary : theme.border,
+                      opacity: canGoNext() && !loading ? 1 : 0.6,
+                    },
+                  ]}
+                  activeOpacity={0.85}
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : currentStep < 2 ? (
+                    <>
+                      <Text style={styles.confirmBtnText}>Next</Text>
+                      <ChevronRight size={20} color="#fff" />
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={20} color="#fff" />
+                      <Text style={styles.confirmBtnText}>Confirm Booking</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </View>
     </Modal>
   );
@@ -314,85 +450,159 @@ export const BookingModal = ({ visible, onClose, onConfirm, doctorName }: any) =
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject },
-  flex: { flex: 1 },
-  modalContainer: { borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: height * 0.8, paddingBottom: 30 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingBottom: 12 },
-  title: { fontSize: 22, fontWeight: '900' },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  content: { paddingHorizontal: 24 },
-  subtitle: { fontSize: 14, fontWeight: '600', marginBottom: 24 },
-  section: { marginBottom: 24 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '800' },
-  daysList: { gap: 12, paddingRight: 24 },
-  dayCard: { width: 60, height: 70, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  dayText: { fontSize: 12, fontWeight: '700' },
-  dateText: { fontSize: 18, fontWeight: '900', marginTop: 2 },
-  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  timeChip: { width: '31%', paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
-  timeText: { fontSize: 13, fontWeight: '800' },
-  bookedText: { fontSize: 9, fontWeight: '900', color: '#EF4444', marginTop: 2, textTransform: 'uppercase' },
-  footer: { padding: 24, borderTopWidth: 1 },
-  confirmBtn: { height: 56, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
-  patientDetailsToggle: {
+  sheet: {
+    width: width,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  },
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: moderateScale(12),
-    borderRadius: moderateScale(12),
-    marginBottom: moderateScale(12),
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
   },
-  toggleText: {
-    fontSize: moderateScale(13),
-    fontWeight: '700',
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+    minWidth: 0,
   },
-  patientDetailsForm: {
-    marginTop: moderateScale(12),
+  titleIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  inputGroup: {
-    marginBottom: moderateScale(16),
+  headerTextWrap: { flex: 1, minWidth: 0 },
+  title: { fontSize: 18, fontWeight: '900', letterSpacing: 0.2 },
+  subtitle: { fontSize: 12, fontWeight: '600', marginTop: 2, opacity: 0.85 },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
-  inputLabel: {
-    fontSize: moderateScale(14),
-    fontWeight: '700',
-    marginBottom: moderateScale(8),
+  main: { flex: 1, minHeight: 0 },
+  content: {
+    flex: 1,
+    minHeight: 0,
+    paddingHorizontal: 20,
   },
-  textInput: {
-    borderRadius: moderateScale(12),
-    padding: moderateScale(12),
-    borderWidth: 1,
-    fontSize: moderateScale(14),
-    minHeight: verticalScale(80),
-    textAlignVertical: 'top',
+  stepScroll: {
+    flex: 1,
+    paddingBottom: 24,
   },
+  section: { marginBottom: 22 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 14, fontWeight: '800' },
+  daysList: { gap: 10, paddingRight: 8 },
+  dayCard: {
+    width: 56,
+    height: 64,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+  dayText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  dateText: { fontSize: 16, fontWeight: '900', marginTop: 4 },
+  timeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  timeChip: {
+    width: '31%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  timeText: { fontSize: moderateScale(13), fontWeight: '800' },
+  bookedText: { fontSize: 9, fontWeight: '800', marginTop: 2, textTransform: 'uppercase' },
+  inputGroup: { marginBottom: moderateScale(18) },
+  inputLabel: { fontSize: moderateScale(13), fontWeight: '700', marginBottom: moderateScale(8) },
   uploadBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: verticalScale(12),
-    borderRadius: moderateScale(12),
-    borderWidth: 1.5,
+    paddingVertical: verticalScale(14),
+    borderRadius: 12,
+    borderWidth: 2,
     gap: moderateScale(8),
   },
-  uploadBtnText: {
-    fontSize: moderateScale(14),
-    fontWeight: '700',
-  },
-  reportsList: {
-    marginTop: moderateScale(12),
-    gap: moderateScale(8),
-  },
+  uploadBtnText: { fontSize: moderateScale(14), fontWeight: '700' },
+  reportsList: { marginTop: moderateScale(12), gap: moderateScale(8) },
   reportItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: moderateScale(12),
-    borderRadius: moderateScale(10),
+    borderRadius: 12,
     gap: moderateScale(10),
   },
-  reportItemText: {
-    flex: 1,
-    fontSize: moderateScale(13),
-    fontWeight: '600',
+  reportItemText: { flex: 1, fontSize: moderateScale(13), fontWeight: '600' },
+  reviewCard: {
+    padding: moderateScale(16),
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: moderateScale(12),
   },
+  reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  reviewLabel: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  reviewValue: { fontSize: moderateScale(15), fontWeight: '700', lineHeight: 22 },
+  footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    borderWidth: 2,
+    gap: 8,
+    minWidth: 100,
+  },
+  secondaryBtnPlaceholder: {
+    minWidth: 100,
+  },
+  secondaryBtnText: { fontSize: 15, fontWeight: '800' },
+  confirmBtn: {
+    flex: 1,
+    minHeight: 20,
+
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

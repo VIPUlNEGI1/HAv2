@@ -16,6 +16,7 @@ export interface Appointment {
 interface AppointmentState {
   appointments: Appointment[];
   addAppointment: (appointment: Appointment) => void;
+  setAppointments: (appointments: Appointment[]) => void;
   cancelAppointment: (id: string) => void;
 }
 
@@ -23,8 +24,9 @@ export const useAppointmentStore = create<AppointmentState>()(
   persist(
     (set) => ({
       appointments: [],
-      addAppointment: (appointment) => 
+      addAppointment: (appointment) =>
         set((state) => ({ appointments: [appointment, ...state.appointments] })),
+      setAppointments: (appointments) => set({ appointments }),
       cancelAppointment: (id) =>
         set((state) => ({ 
           appointments: state.appointments.filter(app => app.id !== id) 

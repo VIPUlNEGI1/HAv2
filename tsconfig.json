@@ -2,7 +2,7 @@
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
     "strict": true,
-    "typeRoots": ["./src/types"],
+    "typeRoots": ["./src/types","./node_modules/@types"],
     "paths": {
       "@/*": ["./src/*"]
     }

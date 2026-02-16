@@ -1,19 +1,55 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
 import { ChevronRight, Star } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { moderateScale, verticalScale, SCREEN_WIDTH } from '@/Helpers/Responsive';
+import { APICall } from '@/api/client';
+import { ApiRoutes } from '@/api/routes';
+
+const FALLBACK_TESTS = [
+  { id: '1', title: 'Full Body Checkup', desc: '60+ Tests included', price: 799, oldPrice: 1599, rating: 4.8 },
+  { id: '2', title: 'Vitamin D (Total)', desc: 'Bone health check', price: 499, oldPrice: 999, rating: 4.9 },
+  { id: '3', title: 'Diabetes Care', desc: 'HbA1c & Glucose', price: 399, oldPrice: 799, rating: 4.7 },
+];
 
 export const TrendingTests = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
+  const [tests, setTests] = useState<Array<{ id: string; title: string; desc: string; price: number; oldPrice?: number; rating: number }>>([]);
+  const [loading, setLoading] = useState(true);
 
-  const tests = [
-    { id: '1', title: 'Full Body Checkup', desc: '60+ Tests included', price: '₹799', oldPrice: '₹1599', rating: '4.8' },
-    { id: '2', title: 'Vitamin D (Total)', desc: 'Bone health check', price: '₹499', oldPrice: '₹999', rating: '4.9' },
-    { id: '3', title: 'Diabetes Care', desc: 'HbA1c & Glucose', price: '₹399', oldPrice: '₹799', rating: '4.7' },
-  ];
+  const fetchTests = useCallback(async () => {
+    setLoading(true);
+    const res = await APICall<{ data?: Array<{
+      _id?: string;
+      id?: string;
+      name?: string;
+      description?: string;
+      price?: number;
+      original_price?: number;
+      rating?: number;
+    }> }>('get', {}, ApiRoutes.labTests.list, {}, undefined);
+    if (res.status === 200 && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+      setTests(
+        res.data.data.slice(0, 5).map((t) => ({
+          id: String(t._id ?? t.id ?? ''),
+          title: t.name ?? 'Lab Test',
+          desc: t.description ?? '',
+          price: t.price ?? 0,
+          oldPrice: t.original_price,
+          rating: t.rating ?? 4.5,
+        }))
+      );
+    } else {
+      setTests(FALLBACK_TESTS);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchTests();
+  }, [fetchTests]);
 
   return (
     <View style={styles.section}>
@@ -42,6 +78,11 @@ export const TrendingTests = () => {
       </View>
 
       {/* Cards */}
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="small" color={theme.primary} />
+        </View>
+      ) : (
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -50,6 +91,7 @@ export const TrendingTests = () => {
         {tests.map(test => (
           <Pressable
             key={test.id}
+            onPress={() => navigation.navigate('LabTestDetailsScreen', { test: { id: test.id, _id: test.id, name: test.title, description: test.desc, price: test.price, original_price: test.oldPrice, rating: test.rating } })}
             style={({ pressed }) => [
               styles.trendingCard,
               {
@@ -81,11 +123,13 @@ export const TrendingTests = () => {
             <View style={styles.bottomRow}>
               <View style={styles.priceContainer}>
                 <Text style={[styles.price, { color: theme.text }]}>
-                  {test.price}
+                  ₹{test.price}
                 </Text>
-                <Text style={[styles.oldPrice, { color: theme.textSecondary }]}>
-                  {test.oldPrice}
-                </Text>
+                {test.oldPrice != null && (
+                  <Text style={[styles.oldPrice, { color: theme.textSecondary }]}>
+                    ₹{test.oldPrice}
+                  </Text>
+                )}
               </View>
 
               <Pressable
@@ -105,11 +149,17 @@ export const TrendingTests = () => {
           </Pressable>
         ))}
       </ScrollView>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  loadingWrap: {
+    paddingVertical: verticalScale(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   section: {
     marginTop: verticalScale(8),
     marginBottom: verticalScale(24),

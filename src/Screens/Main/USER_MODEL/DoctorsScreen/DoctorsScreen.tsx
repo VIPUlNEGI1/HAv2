@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, Image, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, Image, Text, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
 import { DoctorFilters } from './components/DoctorFilters';
 import { useDoctors } from './hooks/useDoctors';
@@ -8,17 +8,25 @@ import { Star, Clock, IndianRupee } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BookingModal } from './components/BookingModal';
 import { useAppointmentStore } from '@/hooks/useAppointmentStore';
+import { useAuthStore } from '@/hooks/useAuthStore';
 import { Toasts, toast } from '@backpackapp-io/react-native-toast';
 import AppSeparator from '@/Components/AppSeparator/AppSeparator';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
+import { APICall } from '@/api/client';
+import { ApiRoutes } from '@/api/routes';
+
+/** MongoDB ObjectIds are 24 hex characters. Only call create-appointment API when doctor_id is valid. */
+const isValidObjectId = (id: string): boolean => /^[a-fA-F0-9]{24}$/.test(id ?? '');
 
 const DoctorsScreen = () => {
   const { theme, shadows } = useTheme();
   const navigation = useNavigation<any>();
   const addAppointment = useAppointmentStore((state) => state.addAppointment);
-  
+  const token = useAuthStore((state) => state.token);
+
   const [selectedDoctor, setSelectedDoctor] = React.useState<any>(null);
   const [modalVisible, setModalVisible] = React.useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
 
   const {
     searchQuery,
@@ -29,33 +37,79 @@ const DoctorsScreen = () => {
     setMinRating,
     filteredDoctors,
     specialties,
+    loading,
+    onRefresh,
   } = useDoctors();
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await onRefresh?.();
+    setRefreshing(false);
+  };
 
   const handleBookPress = (doctor: any) => {
     setSelectedDoctor(doctor);
     setModalVisible(true);
   };
 
-  const handleConfirmBooking = (date: string, time: string) => {
+  const handleConfirmBooking = async (
+    dateISO: string,
+    dateDisplay: string,
+    time: string,
+    patientDetails?: { chiefComplaint?: string; symptoms?: string; medicalHistory?: string; currentMedications?: string; allergies?: string; reports?: Array<{ id: string; name: string; uri: string }> }
+  ) => {
     if (!selectedDoctor) return;
 
+    const body = {
+      doctor_id: selectedDoctor.id,
+      appointment_date: `${dateISO}T12:00:00.000Z`,
+      appointment_time: time,
+      type: 'in-person',
+      reason: patientDetails?.chiefComplaint ?? '',
+      patient_uploaded_details: {
+        chief_complaint: patientDetails?.chiefComplaint ?? '',
+        symptoms: patientDetails?.symptoms ?? '',
+        medical_history: patientDetails?.medicalHistory ?? '',
+        current_medications: patientDetails?.currentMedications ?? '',
+        allergies: patientDetails?.allergies ?? '',
+        reports: (patientDetails?.reports ?? []).map((r) => ({ name: r.name, uri: r.uri })),
+      },
+    };
+
+    let createdId: string | null = null;
+    if (token && isValidObjectId(selectedDoctor.id)) {
+      setBookingLoading(true);
+      const res = await APICall<{ data?: { _id?: string } }>(
+        'post',
+        body,
+        ApiRoutes.appointments.create,
+        {},
+        token
+      );
+      setBookingLoading(false);
+      if (res.status !== 201 && res.status !== 200) {
+        const msg = (res.data as { message?: string })?.message ?? 'Could not book appointment.';
+        toast.error(msg);
+        return;
+      }
+      createdId = res.data?.data?._id ? String(res.data.data._id) : null;
+    }
+
     const newAppointment = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: createdId ?? Math.random().toString(36).substr(2, 9),
       doctorId: selectedDoctor.id,
       doctorName: selectedDoctor.name,
       doctorImage: selectedDoctor.image,
       specialty: selectedDoctor.specialty,
-      date: date,
-      time: time,
+      date: dateDisplay,
+      time,
       status: 'upcoming' as const,
     };
-    
     addAppointment(newAppointment);
     setModalVisible(false);
+    setSelectedDoctor(null);
     toast.success('Appointment Booked Successfully!');
-    setTimeout(() => {
-      navigation.navigate('AppointmentsScreen');
-    }, 1500);
+    setTimeout(() => navigation.navigate('AppointmentsScreen'), 800);
   };
 
   const renderDoctor = ({ item, index }: any) => (
@@ -119,25 +173,33 @@ const DoctorsScreen = () => {
         setMinRating={setMinRating}
       />
 
-      <FlatList
-        data={filteredDoctors}
-        renderItem={renderDoctor}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No doctors found matching your criteria.</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredDoctors}
+          renderItem={renderDoctor}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme.primary]} />}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No doctors found.</Text>
+            </View>
+          }
+        />
+      )}
 
       {selectedDoctor && (
-        <BookingModal 
+        <BookingModal
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
           onConfirm={handleConfirmBooking}
           doctorName={selectedDoctor.name}
+          loading={bookingLoading}
         />
       )}
       <Toasts />
@@ -167,6 +229,7 @@ const styles = StyleSheet.create({
   bookBtnText: { color: '#fff', fontSize: 13, fontWeight: '900' },
   emptyContainer: { padding: 40, alignItems: 'center' },
   emptyText: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
 
 export default DoctorsScreen;

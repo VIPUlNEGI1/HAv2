@@ -18,6 +18,8 @@ interface RoleSelectionModalProps {
   onClose: () => void;
   onRoleSelect: (role: UserRole) => void;
   availableRoles: UserRole[];
+  /** When false, modal stays open after selecting; parent closes on success (e.g. after confirmation). Default true. */
+  closeOnSelect?: boolean;
 }
 
 const roleConfig = {
@@ -52,13 +54,14 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
   onClose,
   onRoleSelect,
   availableRoles,
+  closeOnSelect = true,
 }) => {
   const { theme, shadows } = useTheme();
   const { currentRole } = useRoleStore();
 
   const handleRoleSelect = (role: UserRole) => {
     onRoleSelect(role);
-    onClose();
+    if (closeOnSelect) onClose();
   };
 
   return (

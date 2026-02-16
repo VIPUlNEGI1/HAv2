@@ -7,17 +7,13 @@ import { OfferSlider } from './components/OfferSlider';
 import { QuickActionCards } from './components/QuickActionCards';
 import { TrendingTests } from './components/TrendingTests';
 import { HealthAdviceCard } from './components/HealthAdviceCard';
-import { View, StyleSheet, StatusBar } from 'react-native';
-import { CustomRefresh } from '@/Components/CustomRefresh';
 import { useDashboard } from './hooks/useDashboard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppSeparator from '@/Components/AppSeparator/AppSeparator';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
 
 const DashboardScreen = () => {
   const { theme } = useTheme();
-  const { refreshing, onRefresh, categories, offers } = useDashboard();
-  const insets = useSafeAreaInsets();
+  const { categories, offers } = useDashboard();
 
   return (
     <ScreenWrapper
@@ -37,11 +33,5 @@ const DashboardScreen = () => {
     </ScreenWrapper>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { paddingTop: 0 },
-  // footerSpacer: { height: 20 },
-});
 
 export default DashboardScreen;

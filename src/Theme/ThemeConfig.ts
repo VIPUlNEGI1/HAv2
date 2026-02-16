@@ -1,36 +1,99 @@
 import { moderateScale } from '../Helpers/Responsive';
+import Colors from '../assets/Colors';
 
 export const ThemeConfig = {
   colors: {
     light: {
-      primary: '#00796B', // Hospital Teal
-      secondary: '#1976D2', // Medical Blue
-      background: '#F5F7FA', // Very light medical grey/blue
-      surface: '#FFFFFF',
-      text: '#263238', // Blue Grey 900
-      textSecondary: '#546E7A', // Blue Grey 600
-      border: '#ECEFF1', // Blue Grey 50
-      error: '#D32F2F',
-      success: '#388E3C',
-      card: '#FFFFFF',
-      accent: '#E0F2F1', // Light Teal accent
-      gradientPrimary: ['#00796B', '#004D40'],
-      gradientSecondary: ['#1976D2', '#0D47A1'],
+      // Primary colors from Colors.ts
+      primary: Colors.primary, // '#130160'
+      secondary: Colors.secondaryText, // '#4A416D'
+      ripplePrimary: Colors.ripplePrimary, // '#390C99'
+      
+      // Background & Surface
+      background: Colors.whiteShadeFAFB || '#FAFBFC', // Very light background
+      surface: Colors.white, // '#FFFFFF'
+      card: Colors.white, // '#FFFFFF'
+      
+      // Text colors
+      text: Colors.black, // '#0D0140'
+      textSecondary: Colors.textSecondary || Colors.secondaryText, // '#524B6B' or '#4A416D'
+      
+      // Border & Dividers
+      border: Colors.profileCardBorder || '#13016033', // Light border
+      
+      // Status colors
+      error: Colors.redShadeFF || '#FF4C4C',
+      success: Colors.greenshade || '#71F68E',
+      warning: Colors.yellow || '#f0cd09',
+      
+      // Accent colors
+      accent: Colors.skincolor || '#FCA34D',
+      accentLight: Colors.liteskincolor || '#FFE1D5',
+      
+      // Gray shades
+      gray: Colors.gray || '#A49EB5',
+      grayLight: Colors.grayShadeF87 || '#F8F7FC',
+      grayShade: Colors.grayShade || '#fdfbfbff',
+      
+      // Special colors
+      profileCardBorder: Colors.profileCardBorder,
+      skinShade: Colors.skinShade,
+      batchshade: Colors.batchshade,
+      iconShade: Colors.iconShade,
+      
+      // Gradients
+      gradientPrimary: [Colors.primary, Colors.ripplePrimary],
+      gradientSecondary: [Colors.secondaryText, Colors.primary],
+      
+      // Transparent & Backdrop
+      transparent: Colors.transparent,
+      backdrop: Colors.backdrop,
     },
     dark: {
+      // Primary colors (slightly lighter for dark mode)
       primary: '#4DB6AC',
       secondary: '#64B5F6',
+      ripplePrimary: '#5A3DB3',
+      
+      // Background & Surface
       background: '#102027', // Dark medical slate
       surface: '#263238',
+      card: '#263238',
+      
+      // Text colors
       text: '#ECEFF1',
       textSecondary: '#B0BEC5',
+      
+      // Border & Dividers
       border: '#37474F',
+      
+      // Status colors
       error: '#EF5350',
       success: '#81C784',
-      card: '#263238',
-      accent: '#004D40',
+      warning: Colors.yellow || '#f0cd09',
+      
+      // Accent colors
+      accent: Colors.darkeskincolor || '#FF9228',
+      accentLight: Colors.lightSkincolorI || '#FFD6AD',
+      
+      // Gray shades
+      gray: Colors.gray || '#A49EB5',
+      grayLight: '#37474F',
+      grayShade: '#263238',
+      
+      // Special colors
+      profileCardBorder: 'rgba(255,255,255,0.1)',
+      skinShade: 'rgba(255,146,40,0.1)',
+      batchshade: Colors.batchshade,
+      iconShade: Colors.iconShade,
+      
+      // Gradients
       gradientPrimary: ['#4DB6AC', '#00796B'],
       gradientSecondary: ['#64B5F6', '#1976D2'],
+      
+      // Transparent & Backdrop
+      transparent: Colors.transparent,
+      backdrop: Colors.backdrop,
     },
   },
   spacing: {

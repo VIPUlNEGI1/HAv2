@@ -1,14 +1,73 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
-import { useAppointmentStore } from '@/hooks/useAppointmentStore';
+import { useAppointmentStore, type Appointment } from '@/hooks/useAppointmentStore';
+import { useAuthStore } from '@/hooks/useAuthStore';
+import { APICall } from '@/api/client';
+import { ApiRoutes } from '@/api/routes';
 import { Calendar, Clock, ChevronRight } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
 
+function formatAppointmentDate(isoDate: string): string {
+  try {
+    const d = new Date(isoDate);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return isoDate.slice(0, 10);
+  }
+}
+
+function mapStatus(apiStatus: string): 'upcoming' | 'completed' | 'cancelled' {
+  if (apiStatus === 'cancelled') return 'cancelled';
+  if (apiStatus === 'completed') return 'completed';
+  return 'upcoming';
+}
+
 const AppointmentsScreen = ({ title }: { title?: string }) => {
   const { theme, shadows } = useTheme();
-  const { appointments } = useAppointmentStore();
+  const { appointments, setAppointments } = useAppointmentStore();
+  const token = useAuthStore((s) => s.token);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchAppointments = useCallback(async (isRefresh = false) => {
+    if (!token) return;
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    const res = await APICall<{ data?: Array<{
+      _id?: string;
+      appointment_date?: string;
+      appointment_time?: string;
+      status?: string;
+      doctor_id?: { _id?: string; specialization?: string; avatar_url?: string; user_id?: { name?: string; avatar_url?: string } };
+    }> }>('get', null, ApiRoutes.appointments.list, {}, token);
+    if (isRefresh) setRefreshing(false);
+    else setLoading(false);
+    if (res.status !== 200 || !Array.isArray(res.data?.data)) return;
+    const mapped: Appointment[] = (res.data.data as any[]).map((a) => ({
+      id: String(a._id ?? ''),
+      doctorId: String(a.doctor_id?._id ?? ''),
+      doctorName: a.doctor_id?.user_id?.name ?? 'Doctor',
+      doctorImage: a.doctor_id?.avatar_url ?? a.doctor_id?.user_id?.avatar_url ?? '',
+      specialty: a.doctor_id?.specialization ?? '',
+      date: formatAppointmentDate(a.appointment_date ?? ''),
+      time: a.appointment_time ?? '',
+      status: mapStatus(a.status ?? 'pending'),
+    }));
+    const existing = useAppointmentStore.getState().appointments;
+    const apiIds = new Set(mapped.map((m) => m.id));
+    const localOnly = existing.filter((a) => !apiIds.has(a.id));
+    setAppointments([...mapped, ...localOnly]);
+  }, [token, setAppointments]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  const onRefresh = useCallback(() => {
+    fetchAppointments(true);
+  }, [fetchAppointments]);
 
   const renderAppointment = ({ item, index }: any) => (
     <Animated.View 
@@ -41,6 +100,17 @@ const AppointmentsScreen = ({ title }: { title?: string }) => {
     </Animated.View>
   );
 
+  if (token && loading && appointments.length === 0) {
+    return (
+      <ScreenWrapper title={title || 'My Appointments'} showBack={true} scrollable={false}>
+        <View style={[styles.emptyContainer, { paddingTop: 100 }]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.emptyDesc, { color: theme.textSecondary, marginTop: 16 }]}>Loading appointments…</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
   return (
     <ScreenWrapper
       title={title || "My Appointments"}
@@ -52,6 +122,11 @@ const AppointmentsScreen = ({ title }: { title?: string }) => {
         renderItem={renderAppointment}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={
+          token ? (
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+          ) : undefined
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Calendar size={64} color={theme.border} />

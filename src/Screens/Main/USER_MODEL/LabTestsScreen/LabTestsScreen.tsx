@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, FlatList, Text, Pressable, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, FlatList, Text, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ShieldCheck, MapPin, Star, Clock, Lock } from 'lucide-react-native';
@@ -20,8 +20,16 @@ const LabTestsScreen = () => {
     categories,
     filteredTests,
     loadingLocation,
-    userLocation
+    loadingTests,
+    userLocation,
+    onRefresh,
   } = useLabTests();
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await onRefresh?.();
+    setRefreshing(false);
+  };
 
   const renderTest = ({ item, index }: any) => (
     <Animated.View 
@@ -50,7 +58,7 @@ const LabTestsScreen = () => {
             <View style={styles.labRow}>
               <Text style={[styles.labName, { color: theme.primary }]}>{item.labName}</Text>
               <View style={[styles.dot, { backgroundColor: theme.border }]} />
-              <Text style={[styles.distance, { color: theme.textSecondary }]}>{item.distance} km</Text>
+              <Text style={[styles.distance, { color: theme.textSecondary }]}>{item.distance === '—' ? '—' : `${item.distance} km`}</Text>
             </View>
           </View>
         </View>
@@ -117,18 +125,25 @@ const LabTestsScreen = () => {
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedSpecialty}
       />
-      <FlatList
-        data={filteredTests}
-        renderItem={renderTest}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No tests found matching your search nearby.</Text>
-          </View>
-        }
-      />
+      {loadingTests ? (
+        <View style={[styles.center, { flex: 1 }]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredTests}
+          renderItem={renderTest}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme.primary]} />}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No tests found.</Text>
+            </View>
+          }
+        />
+      )}
     </ScreenWrapper>
   );
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, ScrollView, Dimensions, Image } from 'react-native';
 import { useTheme } from '@/Theme/useTheme';
 import { X, MapPin, Star, Navigation, Phone, Clock, ShieldCheck } from 'lucide-react-native';
 import Animated, { SlideInUp } from 'react-native-reanimated';

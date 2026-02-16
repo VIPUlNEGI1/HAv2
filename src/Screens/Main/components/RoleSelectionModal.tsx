@@ -10,7 +10,7 @@ import {
 import { User, Stethoscope, Building2, Factory, X } from 'lucide-react-native';
 import { useTheme } from '@/Theme/useTheme';
 import { useRoleStore } from '@/hooks/useRoleStore';
- 
+import type { UserRole } from '@/types';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 interface RoleSelectionModalProps {

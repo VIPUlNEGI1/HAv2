@@ -15,42 +15,46 @@ import MedicineDetailsScreen from '@/Screens/Main/USER_MODEL/MedicineScreen/Medi
 import DoctorDetailsScreen from '@/Screens/Main/USER_MODEL/DoctorsScreen/DoctorDetailsScreen';
 import LabTestDetailsScreen from '@/Screens/Main/USER_MODEL/LabTestsScreen/LabTestDetailsScreen';
 import { AyurvedaScreen, BabyCareScreen, HomeCareScreen } from '@/Screens/Main/USER_MODEL/PlaceholderScreens';
-import DoctorProfileScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorProfileScreen';
-import DoctorAppointmentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorAppointmentsScreen';
-import DoctorDocumentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorDocumentsScreen';
-import DoctorPaymentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorPaymentsScreen';
-import DoctorChatScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorChatScreen';
-import DoctorVideoCallScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorVideoCallScreen';
-import DoctorAudioCallScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorAudioCallScreen';
-import DoctorSettingsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorSettingsScreen';
-import DoctorManageServicesScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorManageServicesScreen';
-import DoctorPatientListScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorPatientListScreen';
+import DoctorProfileScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorProfileScreen/DoctorProfileScreen';
+import DoctorAppointmentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorAppointmentsScreen/DoctorAppointmentsScreen';
+import DoctorDocumentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorDocumentsScreen/DoctorDocumentsScreen';
+import DoctorPaymentsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorPaymentsScreen/DoctorPaymentsScreen';
+import DoctorChatScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorChatScreen/DoctorChatScreen';
+import DoctorVideoCallScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorVideoCallScreen/DoctorVideoCallScreen';
+import DoctorAudioCallScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorAudioCallScreen/DoctorAudioCallScreen';
+import DoctorSettingsScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorSettingsScreen/DoctorSettingsScreen';
+import DoctorManageServicesScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorManageServicesScreen/DoctorManageServicesScreen';
+import DoctorPatientListScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorPatientListScreen/DoctorPatientListScreen';
+import DoctorDashboardScreen from '@/Screens/Main/DOCTOR_MODEL/DoctorDashboardScreen/DoctorDashboardScreen';
 import SettingsScreen from '@/Screens/Main/CommonScreens/SettingsScreen';
+import UserInfoScreen from '@/Screens/Main/USER_MODEL/UserInfoScreen/UserInfoScreen';
 // Clinic Model Screens
-import ClinicProductsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicProductsScreen';
-import ClinicOrdersScreen from '@/Screens/Main/CLINIC_MODEL/ClinicOrdersScreen';
-import ClinicExpensesScreen from '@/Screens/Main/CLINIC_MODEL/ClinicExpensesScreen';
-import ClinicLicensesScreen from '@/Screens/Main/CLINIC_MODEL/ClinicLicensesScreen';
-import ClinicFactoriesScreen from '@/Screens/Main/CLINIC_MODEL/ClinicFactoriesScreen';
-import ClinicInventoryScreen from '@/Screens/Main/CLINIC_MODEL/ClinicInventoryScreen';
-import ClinicProfileScreen from '@/Screens/Main/CLINIC_MODEL/ClinicProfileScreen';
-import ClinicSettingsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicSettingsScreen';
-import FactoryProductsScreen from '@/Screens/Main/CLINIC_MODEL/FactoryProductsScreen';
-import ClinicProductDetailsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicProductDetailsScreen';
-import ClinicOrderDetailsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicOrderDetailsScreen';
-import ClinicChatScreen from '@/Screens/Main/CLINIC_MODEL/ClinicChatScreen';
+import ClinicProductsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicProductsScreen/ClinicProductsScreen';
+import ClinicOrdersScreen from '@/Screens/Main/CLINIC_MODEL/ClinicOrdersScreen/ClinicOrdersScreen';
+import ClinicExpensesScreen from '@/Screens/Main/CLINIC_MODEL/ClinicExpensesScreen/ClinicExpensesScreen';
+import ClinicLicensesScreen from '@/Screens/Main/CLINIC_MODEL/ClinicLicensesScreen/ClinicLicensesScreen';
+import ClinicFactoriesScreen from '@/Screens/Main/CLINIC_MODEL/ClinicFactoriesScreen/ClinicFactoriesScreen';
+import ClinicInventoryScreen from '@/Screens/Main/CLINIC_MODEL/ClinicInventoryScreen/ClinicInventoryScreen';
+import ClinicProfileScreen from '@/Screens/Main/CLINIC_MODEL/ClinicProfileScreen/ClinicProfileScreen';
+import ClinicSettingsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicSettingsScreen/ClinicSettingsScreen';
+import ClinicDashboardScreen from '@/Screens/Main/CLINIC_MODEL/ClinicDashboardScreen/ClinicDashboardScreen';
+import FactoryProductsScreen from '@/Screens/Main/CLINIC_MODEL/FactoryProductsScreen/FactoryProductsScreen';
+import ClinicProductDetailsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicProductDetailsScreen/ClinicProductDetailsScreen';
+import ClinicOrderDetailsScreen from '@/Screens/Main/CLINIC_MODEL/ClinicOrderDetailsScreen/ClinicOrderDetailsScreen';
+import ClinicChatScreen from '@/Screens/Main/CLINIC_MODEL/ClinicChatScreen/ClinicChatScreen';
 // Factory Model Screens
-import FactoryManageProductsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryManageProductsScreen';
-import FactoryClientsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryClientsScreen';
-import FactoryClientDetailsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryClientDetailsScreen';
-import FactoryOrdersScreen from '@/Screens/Main/FACTORY_MODEL/FactoryOrdersScreen';
-import FactoryOrderDetailsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryOrderDetailsScreen';
-import FactoryPaymentsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryPaymentsScreen';
-import FactoryShippingScreen from '@/Screens/Main/FACTORY_MODEL/FactoryShippingScreen';
-import FactoryProfileScreen from '@/Screens/Main/FACTORY_MODEL/FactoryProfileScreen';
-import FactorySettingsScreen from '@/Screens/Main/FACTORY_MODEL/FactorySettingsScreen';
-import FactoryProductDetailsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryProductDetailsScreen';
-import FactoryChatScreen from '@/Screens/Main/FACTORY_MODEL/FactoryChatScreen';
+import FactoryManageProductsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryManageProductsScreen/FactoryManageProductsScreen';
+import FactoryClientsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryClientsScreen/FactoryClientsScreen';
+import FactoryClientDetailsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryClientDetailsScreen/FactoryClientDetailsScreen';
+import FactoryOrdersScreen from '@/Screens/Main/FACTORY_MODEL/FactoryOrdersScreen/FactoryOrdersScreen';
+import FactoryOrderDetailsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryOrderDetailsScreen/FactoryOrderDetailsScreen';
+import FactoryPaymentsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryPaymentsScreen/FactoryPaymentsScreen';
+import FactoryShippingScreen from '@/Screens/Main/FACTORY_MODEL/FactoryShippingScreen/FactoryShippingScreen';
+import FactoryProfileScreen from '@/Screens/Main/FACTORY_MODEL/FactoryProfileScreen/FactoryProfileScreen';
+import FactorySettingsScreen from '@/Screens/Main/FACTORY_MODEL/FactorySettingsScreen/FactorySettingsScreen';
+import FactoryProductDetailsScreen from '@/Screens/Main/FACTORY_MODEL/FactoryProductDetailsScreen/FactoryProductDetailsScreen';
+import FactoryChatScreen from '@/Screens/Main/FACTORY_MODEL/FactoryChatScreen/FactoryChatScreen';
+import FactoryDashboardScreen from '@/Screens/Main/FACTORY_MODEL/FactoryDashboardScreen/FactoryDashboardScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -97,19 +101,21 @@ export const HomeStackNavigator = () => {
       <Stack.Screen 
         name="DoctorVideoCallScreen" 
         component={DoctorVideoCallScreen}
-        options={{ headerShown: false, presentation: 'fullScreenModal' }}
+        options={{ headerShown: false, presentation: 'modal' }}
       />
       <Stack.Screen 
         name="DoctorAudioCallScreen" 
         component={DoctorAudioCallScreen}
-        options={{ headerShown: false, presentation: 'fullScreenModal' }}
+        options={{ headerShown: false, presentation: 'modal' }}
       />
       <Stack.Screen name="DoctorSettingsScreen" component={DoctorSettingsScreen} />
       <Stack.Screen name="DoctorManageServicesScreen" component={DoctorManageServicesScreen} />
       <Stack.Screen name="DoctorPatientListScreen" component={DoctorPatientListScreen} />
       <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+      <Stack.Screen name="UserInfoScreen" component={UserInfoScreen} />
       
       {/* Clinic Model Screens */}
+      <Stack.Screen name="ClinicDashboardScreen" component={ClinicDashboardScreen} />
       <Stack.Screen name="ClinicProductsScreen" component={ClinicProductsScreen} />
       <Stack.Screen name="ClinicOrdersScreen" component={ClinicOrdersScreen} />
       <Stack.Screen name="ClinicExpensesScreen" component={ClinicExpensesScreen} />

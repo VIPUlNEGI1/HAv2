@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Switch,
 } from 'react-native';
 import {
   Settings,
@@ -16,52 +15,43 @@ import {
   LogOut,
   Trash2,
   ShieldCheck,
-  Moon,
-  Sun,
   Camera,
   ShieldCheck as VerifiedIcon,
-  UserCircle,
+  Info,
 } from 'lucide-react-native';
 import { useTheme } from '@/Theme/useTheme';
- 
+import { useNavigation } from '@react-navigation/native';
 import { useRoleStore } from '@/hooks/useRoleStore';
-import { useAuthStore } from '@/hooks/useAuthStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
-import type { UserRole } from '@/types';
 import { ProfileOption } from '@/Components/ProfileScreenOptions/ProfileOption';
-import { RoleSelectionModal } from '../CommonScreens/components/RoleSelectionModal';
 import { useProfile } from '../USER_MODEL/hooks/useProfile';
 
 const UserProfileScreen = () => {
-  const { theme, isDarkMode, shadows } = useTheme();
+  const { theme, shadows } = useTheme();
+  const navigation = useNavigation<any>();
   const {
     user,
+    displayName,
+    savedAddressCount,
+    savingAddress,
+    handleSaveCurrentLocation,
     logout,
-    toggleTheme,
     handleDeleteAccount,
     profileStats,
-    dummyAvatar,
+    avatarUrl,
   } = useProfile();
-  const { currentRole, availableRoles, setRole } = useRoleStore();
-  const { user: authUser } = useAuthStore();
-  const [roleModalVisible, setRoleModalVisible] = useState(false);
+  const { currentRole } = useRoleStore();
 
-  const handleRoleSelect = (role: UserRole) => {
-    setRole(role);
-    // In a real app, you might want to refresh the navigation or show a success message
-    console.log('Role changed to:', role);
-  };
-
-  const getRoleDisplayName = (role: UserRole | null) => {
+  const getRoleDisplayName = (role: string | null) => {
     if (!role) return 'Select Role';
-    const roleNames = {
+    const roleNames: Record<string, string> = {
       user: 'User',
       doctor: 'Doctor',
       clinic: 'Clinic',
       factory: 'Factory',
     };
-    return roleNames[role];
+    return roleNames[role] || role;
   };
 
   return (
@@ -76,7 +66,7 @@ const UserProfileScreen = () => {
         <View style={styles.profileHeaderRow}>
           <View style={styles.avatarWrapper}>
             <View style={[styles.avatarContainer, { borderColor: theme.primary + '44' }]}>
-              <Image source={{ uri: dummyAvatar }} style={styles.avatar} />
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
             </View>
             <TouchableOpacity style={[styles.cameraBtn, { backgroundColor: theme.primary }]}>
               <Camera size={14} color="#fff" />
@@ -86,13 +76,10 @@ const UserProfileScreen = () => {
           <View style={styles.nameContainer}>
             <View style={styles.userNameRow}>
               <Text style={[styles.userName, { color: theme.text }]}>
-                {user?.name || 'Vipul Negi'}
+                {displayName || user?.name || 'User'}
               </Text>
               <VerifiedIcon size={18} color={theme.primary} style={styles.verifiedIcon} />
             </View>
-            <Text style={[styles.userPhone, { color: theme.textSecondary }]}>
-              {user?.phone_number || '+91 9876543210'}
-            </Text>
             <View style={[styles.membershipBadge, { backgroundColor: theme.primary + '15' }]}>
               <Text style={[styles.membershipText, { color: theme.primary }]}>
                 {getRoleDisplayName(currentRole).toUpperCase()}
@@ -100,7 +87,10 @@ const UserProfileScreen = () => {
             </View>
           </View>
           
-          <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.background }]}>
+          <TouchableOpacity 
+            style={[styles.settingsBtn, { backgroundColor: theme.background }]}
+            onPress={() => navigation.navigate('SettingsScreen')}
+          >
             <Settings size={20} color={theme.text} />
           </TouchableOpacity>
         </View>
@@ -124,52 +114,49 @@ const UserProfileScreen = () => {
 
       {/* Main Content */}
       <View style={styles.content}>
-        {/* Theme Toggle */}
-        <View style={[styles.sectionCard, { backgroundColor: theme.surface, ...shadows }]}>
-          <View style={styles.themeToggleRow}>
-            <View style={styles.themeLabelContainer}>
-              <View style={[styles.themeIcon, { backgroundColor: isDarkMode ? '#4B2A9922' : '#FFD70022' }]}>
-                {isDarkMode ? <Moon size={20} color="#4B2A99" /> : <Sun size={20} color="#FFD700" />}
-              </View>
-              <View>
-                <Text style={[styles.optionTitle, { color: theme.text }]}>Dark Appearance</Text>
-                <Text style={[styles.optionSubtitle, { color: theme.textSecondary }]}>Switch between light and dark</Text>
-              </View>
-            </View>
-            <Switch
-              value={isDarkMode}
-              onValueChange={toggleTheme}
-              trackColor={{ false: '#767577', true: theme.primary }}
-              thumbColor="#fff"
-            />
-          </View>
-        </View>
-
-        {/* Role Switching */}
-        <Text style={[styles.sectionHeaderTitle, { color: theme.textSecondary }]}>ACCOUNT</Text>
+        {/* Info & Settings - single entry point */}
+        <Text style={[styles.sectionHeaderTitle, { color: theme.textSecondary }]}>PROFILE</Text>
         <View style={[styles.sectionCard, { backgroundColor: theme.surface, ...shadows }]}>
           <ProfileOption
             index={0}
-            icon={UserCircle}
-            title="Switch Role"
-            subtitle={`Current: ${getRoleDisplayName(currentRole)}`}
-            onPress={() => setRoleModalVisible(true)}
+            icon={Info}
+            title="Info & Settings"
+            subtitle="View & edit profile, documents, payment history"
+            onPress={() => navigation.navigate('UserInfoScreen')}
           />
         </View>
 
         {/* Account Settings */}
         <Text style={[styles.sectionHeaderTitle, { color: theme.textSecondary }]}>ACCOUNT SETTINGS</Text>
         <View style={[styles.sectionCard, { backgroundColor: theme.surface, ...shadows }]}>
-          <ProfileOption index={1} icon={MapPin} title="Saved Addresses" subtitle="Home, Office & others" />
-          <ProfileOption index={2} icon={CreditCard} title="Payments" subtitle="Cards, UPI & Wallets" />
-          <ProfileOption index={3} icon={Bell} title="Notifications" subtitle="Alerts, Offers & Updates" />
+          <ProfileOption
+            index={1}
+            icon={MapPin}
+            title="Saved Addresses"
+            subtitle={savedAddressCount > 0 ? `${savedAddressCount} address(es)` : 'Add home, office & others'}
+          />
+          <ProfileOption
+            index={2}
+            icon={MapPin}
+            title="Save current location"
+            subtitle={savingAddress ? 'Saving...' : 'Add your current location as address'}
+            onPress={savingAddress ? undefined : handleSaveCurrentLocation}
+          />
+          <ProfileOption index={3} icon={CreditCard} title="Payments" subtitle="Cards, UPI & Wallets" />
+          <ProfileOption index={4} icon={Bell} title="Notifications" subtitle="Alerts, Offers & Updates" />
         </View>
 
         {/* Support & Legal */}
         <Text style={[styles.sectionHeaderTitle, { color: theme.textSecondary }]}>SUPPORT & LEGAL</Text>
         <View style={[styles.sectionCard, { backgroundColor: theme.surface, ...shadows }]}>
           <ProfileOption index={4} icon={ShieldCheck} title="Privacy Policy" />
-          <ProfileOption index={5} icon={Settings} title="App Settings" />
+          <ProfileOption
+            index={5}
+            icon={Settings}
+            title="App Settings"
+            subtitle="Theme, role switch, notifications"
+            onPress={() => navigation.navigate('SettingsScreen')}
+          />
         </View>
 
         {/* Danger Zone */}
@@ -188,12 +175,6 @@ const UserProfileScreen = () => {
         <View style={styles.footerSpacer} />
       </View>
 
-      <RoleSelectionModal
-        visible={roleModalVisible}
-        onClose={() => setRoleModalVisible(false)}
-        onRoleSelect={handleRoleSelect}
-        availableRoles={availableRoles.length > 0 ? availableRoles : ['user', 'doctor', 'clinic', 'factory']}
-      />
     </ScreenWrapper>
   );
 };
@@ -235,11 +216,6 @@ const styles = StyleSheet.create({
   content: { padding: 20 },
   sectionCard: { borderRadius: 24, overflow: 'hidden', marginBottom: 16 },
   sectionHeaderTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.2, marginLeft: 8, marginBottom: 12, marginTop: 8 },
-  themeToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },
-  themeLabelContainer: { flexDirection: 'row', alignItems: 'center' },
-  themeIcon: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  optionTitle: { fontSize: 16, fontWeight: '700' },
-  optionSubtitle: { fontSize: 12, marginTop: 2 },
   version: { textAlign: 'center', fontSize: 12, marginTop: 32, fontWeight: '600' },
   footerSpacer: { height: 20 },
 });
