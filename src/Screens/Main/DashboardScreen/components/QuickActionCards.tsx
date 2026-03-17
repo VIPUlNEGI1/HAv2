@@ -31,7 +31,8 @@ export const QuickActionCards = () => {
         },
       ]}
     >
-      <LinearGradient colors={colors} style={styles.quickCard}>
+      <View style={styles.quickCardShadow}>
+        <LinearGradient colors={colors} style={styles.quickCard}>
         <View style={styles.topRow}>
           <View style={styles.quickIcon}>{icon}</View>
         </View>
@@ -46,7 +47,8 @@ export const QuickActionCards = () => {
         </View>
 
         <ArrowRight size={moderateScale(16)} color={arrowColor} />
-      </LinearGradient>
+        </LinearGradient>
+      </View>
     </Pressable>
   );
 
@@ -86,17 +88,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  quickCard: {
-    padding: moderateScale(16),
+  quickCardShadow: {
     borderRadius: moderateScale(24),
-    aspectRatio: 1,
-    justifyContent: 'space-between',
-
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
+    backgroundColor: 'transparent',
+  },
+
+  quickCard: {
+    padding: moderateScale(16),
+    borderRadius: moderateScale(24),
+    aspectRatio: 1,
+    justifyContent: 'space-between',
   },
 
   topRow: {

@@ -100,6 +100,14 @@ export interface SavedAddress {
   is_default?: boolean;
 }
 
+export interface PaymentMethod {
+  type?: 'card' | 'upi' | 'wallet';
+  provider?: string;
+  last_four?: string;
+  expiry_date?: string;
+  is_default?: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -110,6 +118,7 @@ export interface User {
   avatar_url?: string;
   location?: UserLocation;
   saved_addresses?: SavedAddress[];
+  payment_methods?: PaymentMethod[];
   kyc_status?: 'pending' | 'verified' | 'rejected';
   roles?: UserRole[]; // User can have multiple roles
 }

@@ -13,8 +13,8 @@ import type { RootStackParamList } from '@/types';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-export default () => {
-  const hasSeenOnboarding = getHasSeenAppOnboarding();
+export default function AuthNavigation() {
+  const hasSeenAppOnboarding = getHasSeenAppOnboarding();
 
   return (
     <Stack.Navigator
@@ -22,7 +22,7 @@ export default () => {
         ...Constant.navigationOptions,
         gestureEnabled: true,
       }}
-      initialRouteName={hasSeenOnboarding ? 'VerifyEmailScreen' : 'AppOnboardingScreen'}
+      initialRouteName={hasSeenAppOnboarding ? 'VerifyEmailScreen' : 'AppOnboardingScreen'}
     >
       <Stack.Screen name="AppOnboardingScreen" component={AppOnboardingScreen} />
       <Stack.Screen name="VerifyEmailScreen" component={VerifyEmailScreen} />
@@ -33,4 +33,4 @@ export default () => {
       <Stack.Screen name="OTPVerificationScreen" component={OTPVerificationScreen} />
     </Stack.Navigator>
   );
-};
+}

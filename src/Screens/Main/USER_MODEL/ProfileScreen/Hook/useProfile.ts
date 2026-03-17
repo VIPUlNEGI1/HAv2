@@ -13,24 +13,32 @@ export const useProfile = () => {
   const { user, logout, updateUser, token } = useAuthStore();
   const [savingAddress, setSavingAddress] = useState(false);
 
-  // Fetch fresh profile on mount (gets saved_addresses, etc.)
+  // Fetch full profile on mount (user + saved_addresses, payment_methods, etc. from GET /api/profile)
   useEffect(() => {
     if (!token) return;
     APICall<{
       data?: {
-        id?: string;
-        name?: string;
-        email?: string;
-        phone_number?: string;
-        age?: number | null;
-        gender?: string | null;
-        avatar_url?: string;
-        location?: UserLocation;
-        saved_addresses?: unknown[];
+        user?: {
+          id?: string;
+          name?: string;
+          email?: string;
+          phone_number?: string;
+          age?: number | null;
+          gender?: string | null;
+          avatar_url?: string;
+          location?: UserLocation;
+          saved_addresses?: unknown[];
+          payment_methods?: unknown[];
+        };
       };
-    }>('get', {}, ApiRoutes.auth.me, {}, token).then((res) => {
-      if (res.status === 200 && res.data?.data) {
-        const u = res.data.data;
+    }>('get', {}, ApiRoutes.profile.get, {}, token).then((res) => {
+      if (__DEV__ && console?.log) {
+        const data = (res as { data?: { data?: { user?: unknown } } }).data;
+        console.log('[Profile] useProfile GET /api/profile:', { status: res.status, hasData: !!data?.data, hasUser: !!data?.data?.user });
+        if (data?.data?.user) console.log('[Profile] useProfile backend user (keys):', Object.keys(data.data.user as Record<string, unknown>));
+      }
+      if (res.status === 200 && res.data?.data?.user) {
+        const u = res.data.data.user;
         updateUser({
           name: u.name,
           email: u.email,
@@ -39,7 +47,8 @@ export const useProfile = () => {
           gender: u.gender,
           avatar_url: u.avatar_url,
           location: u.location,
-          saved_addresses: u.saved_addresses,
+          saved_addresses: u.saved_addresses as any,
+          payment_methods: u.payment_methods as any,
         });
       }
     });

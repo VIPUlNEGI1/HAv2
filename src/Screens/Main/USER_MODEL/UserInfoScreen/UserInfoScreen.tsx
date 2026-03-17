@@ -31,8 +31,8 @@ import {
   X,
   Trash2,
 } from 'lucide-react-native';
-import { launchImageLibrary, launchCamera, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
+import { pickProfileImage } from '@/Helpers/imagePicker';
 import { useTheme } from '@/Theme/useTheme';
 import { useProfile } from '../ProfileScreen/Hook/useProfile';
 import { moderateScale, verticalScale } from '@/Helpers/Responsive';
@@ -40,6 +40,7 @@ import Animated, { FadeIn, FadeInDown, FadeInUp, Layout, SlideInRight } from 're
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { APICall } from '@/api/client';
 import { ApiRoutes } from '@/api/routes';
+import { toast } from '@backpackapp-io/react-native-toast';
 
 type TabType = 'profile' | 'documents' | 'payments';
 
@@ -58,7 +59,9 @@ const TAB_OPTIONS: { key: TabType; label: string; icon: typeof User }[] = [
 ];
 
 const PADDING = moderateScale(16);
-const CARD_RADIUS = moderateScale(12);
+const CARD_RADIUS = moderateScale(16);
+const AVATAR_SIZE = moderateScale(80);
+const CAMERA_BADGE_SIZE = moderateScale(30);
 
 function EditField({
   label,
@@ -203,52 +206,45 @@ const UserInfoScreen = () => {
 
   const pickPhoto = useCallback(
     (source: 'camera' | 'gallery') => {
-      const options = { mediaType: 'photo' as MediaType, quality: 0.8, maxWidth: 800, maxHeight: 800 } as const;
-      const launcher = source === 'camera' ? launchCamera : launchImageLibrary;
-      launcher(options, (res: ImagePickerResponse) => {
-        if (res.assets?.[0]?.uri) {
-          setLocalAvatar(res.assets[0].uri);
-          setShowPhotoModal(false);
-          setUploadingAvatar(true);
-          APICall<{ data?: { avatar_url?: string } }>(
-            'post',
-            { image_url: res.assets[0].uri },
-            ApiRoutes.profile.uploadImage,
-            {},
-            token,
-          ).then((r) => {
-            setUploadingAvatar(false);
+      pickProfileImage(source, (uri, error) => {
+        setShowPhotoModal(false);
+        if (error) {
+          toast.error(error);
+          return;
+        }
+        if (!uri) return;
+        setLocalAvatar(uri);
+        setUploadingAvatar(true);
+        APICall<{ data?: { avatar_url?: string } }>(
+          'post',
+          { image_url: uri },
+          ApiRoutes.profile.uploadImage,
+          {},
+          token,
+        )
+          .then((r) => {
             if (r.status === 200 && r.data?.data?.avatar_url) {
               const url = r.data.data.avatar_url;
               setLocalAvatar(url);
               updateUser({ avatar_url: url });
             }
-          }).catch(() => setUploadingAvatar(false));
-        }
+          })
+          .catch(() => {})
+          .finally(() => setUploadingAvatar(false));
       });
     },
-    [token],
+    [token, updateUser],
   );
 
   const pickDocument = useCallback((source: 'camera' | 'gallery') => {
-    const options = { mediaType: 'photo' as MediaType, quality: 0.8 as const };
-    const launcher = source === 'camera' ? launchCamera : launchImageLibrary;
-    launcher(options, (res: ImagePickerResponse) => {
-      if (res.assets?.[0]?.uri) {
-        const uri = res.assets[0].uri;
-        const name = res.assets[0].fileName || uri.split('/').pop() || 'Document';
-        setDocuments((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            uri,
-            name,
-            type: 'image',
-            uploadedAt: new Date().toISOString().split('T')[0],
-          },
-        ]);
-        setShowDocModal(false);
-      }
+    pickProfileImage(source, (uri) => {
+      setShowDocModal(false);
+      if (!uri) return;
+      const name = uri.split('/').pop() || 'Document';
+      setDocuments((prev) => [
+        ...prev,
+        { id: Date.now().toString(), uri, name, type: 'image', uploadedAt: new Date().toISOString().split('T')[0] },
+      ]);
     });
   }, []);
 
@@ -308,22 +304,22 @@ const UserInfoScreen = () => {
 
   return (
     <ScreenWrapper title="Account" showBack={true} scrollable={false}>
-      {/* Profile card - Google-style */}
-      <Animated.View entering={FadeIn.duration(400)} style={[styles.profileCard, { backgroundColor: theme.surface, ...shadows, borderRadius: CARD_RADIUS }]}>
+      {/* Profile hero card */}
+      <Animated.View entering={FadeIn.duration(400)} style={[styles.profileCard, styles.profileHero, { backgroundColor: theme.surface, borderColor: theme.border, ...shadows, borderRadius: CARD_RADIUS }]}>
         <View style={styles.profileRow}>
           <Pressable
             onPress={() => setShowPhotoModal(true)}
             style={({ pressed }) => [styles.avatarWrap, { borderColor: theme.border }, pressed && { opacity: 0.9 }]}
           >
             {uploadingAvatar ? (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: theme.grayLight || theme.border }]}>
+              <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary + '18' }]}>
                 <ActivityIndicator color={theme.primary} size="small" />
               </View>
             ) : (
               <Image source={{ uri: effectiveAvatar }} style={styles.avatar} />
             )}
             <View style={[styles.cameraBadge, { backgroundColor: theme.primary }]}>
-              <Camera size={moderateScale(12)} color="#fff" strokeWidth={2.5} />
+              <Camera size={moderateScale(18)} color="#fff" strokeWidth={2.5} />
             </View>
           </Pressable>
           <View style={styles.profileInfo}>
@@ -618,16 +614,20 @@ const styles = StyleSheet.create({
     padding: PADDING,
     overflow: 'hidden',
   },
+  profileHero: {
+    padding: moderateScale(20),
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: moderateScale(16),
+    gap: moderateScale(20),
   },
   avatarWrap: {
-    width: moderateScale(64),
-    height: moderateScale(64),
-    borderRadius: moderateScale(32),
-    borderWidth: 1,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    borderWidth: 1.5,
     overflow: 'hidden',
   },
   avatar: {
@@ -645,25 +645,29 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: moderateScale(24),
-    height: moderateScale(24),
-    borderRadius: moderateScale(12),
+    width: CAMERA_BADGE_SIZE,
+    height: CAMERA_BADGE_SIZE,
+    borderRadius: CAMERA_BADGE_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   profileInfo: {
     flex: 1,
     minWidth: 0,
-    paddingVertical: verticalScale(4),
+    paddingVertical: verticalScale(2),
   },
   profileName: {
-    fontSize: moderateScale(18),
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: moderateScale(20),
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: 0.2,
   },
   profileEmail: {
     fontSize: moderateScale(14),
-    fontWeight: '400',
+    fontWeight: '500',
+    opacity: 0.9,
   },
   modalBackdrop: {
     flex: 1,

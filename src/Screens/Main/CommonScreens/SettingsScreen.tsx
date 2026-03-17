@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   Image,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { ScreenWrapper } from '@/Components/ScreenWrapper';
 import { useTheme } from '@/Theme/useTheme';
 import { moderateScale, verticalScale } from '@/Helpers/Responsive';
-import { 
+import {
   User,
   Bell,
   Shield,
@@ -33,7 +34,6 @@ import {
   Factory,
   CreditCard,
 } from 'lucide-react-native';
-import { launchImageLibrary, launchCamera, ImagePickerResponse, MediaType } from 'react-native-image-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Toasts, toast } from '@backpackapp-io/react-native-toast';
 import { useNavigation } from '@react-navigation/native';
@@ -41,6 +41,9 @@ import { useRoleStore } from '@/hooks/useRoleStore';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import type { UserRole } from '@/types';
 import { RoleSelectionModal } from './components/RoleSelectionModal';
+import { pickProfileImage } from '@/Helpers/imagePicker';
+import { APICall } from '@/api/client';
+import { ApiRoutes } from '@/api/routes';
 
 const roleDisplayNames: Record<UserRole, string> = { user: 'User', doctor: 'Doctor', clinic: 'Clinic', factory: 'Factory' };
 
@@ -49,54 +52,68 @@ const SettingsScreen = () => {
   const navigation = useNavigation<any>();
   const { currentRole, setRole, availableRoles } = useRoleStore();
   const { user, logout, token } = useAuthStore();
+  const { updateUser } = useAuthStore();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(user?.avatar_url ?? null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [roleModalVisible, setRoleModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (user?.avatar_url) setProfileImage(user.avatar_url);
+  }, [user?.avatar_url]);
+
+  const uploadAndSetAvatar = async (uri: string) => {
+    if (!token) return;
+    setUploadingImage(true);
+    try {
+      const res = await APICall<{ data?: { avatar_url?: string } }>(
+        'post',
+        { image_url: uri },
+        ApiRoutes.profile.uploadImage,
+        {},
+        token
+      );
+      if (res.status === 200 && res.data?.data?.avatar_url) {
+        const url = res.data.data.avatar_url;
+        setProfileImage(url);
+        updateUser({ avatar_url: url });
+        toast.success('Profile photo updated');
+      } else {
+        setProfileImage(uri);
+        updateUser({ avatar_url: uri });
+        toast.success('Profile photo updated');
+      }
+    } catch {
+      setProfileImage(uri);
+      toast.success('Photo set locally. Upload failed — try again later.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleImagePicker = () => {
     Alert.alert(
-      'Select Image',
-      'Choose an option',
+      'Profile photo',
+      'Take a new photo or choose from gallery',
       [
-        { text: 'Camera', onPress: () => openCamera() },
-        { text: 'Gallery', onPress: () => openGallery() },
+        { text: 'Take photo', onPress: () => openPicker('camera') },
+        { text: 'Choose from gallery', onPress: () => openPicker('gallery') },
         { text: 'Cancel', style: 'cancel' },
       ]
     );
   };
 
-  const openCamera = () => {
-    launchCamera(
-      {
-        mediaType: 'photo' as MediaType,
-        quality: 0.8,
-        maxWidth: 800,
-        maxHeight: 800,
-      },
-      (response: ImagePickerResponse) => {
-        if (response.assets && response.assets[0]) {
-          setProfileImage(response.assets[0].uri || null);
-          toast.success('Profile image updated!');
-        }
+  const openPicker = (source: 'camera' | 'gallery') => {
+    pickProfileImage(source, (uri, error) => {
+      if (error) {
+        toast.error(error);
+        return;
       }
-    );
-  };
-
-  const openGallery = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo' as MediaType,
-        quality: 0.8,
-        maxWidth: 800,
-        maxHeight: 800,
-      },
-      (response: ImagePickerResponse) => {
-        if (response.assets && response.assets[0]) {
-          setProfileImage(response.assets[0].uri || null);
-          toast.success('Profile image updated!');
-        }
+      if (uri) {
+        setProfileImage(uri);
+        uploadAndSetAvatar(uri);
       }
-    );
+    });
   };
 
   const handleRoleSelect = async (role: UserRole) => {
@@ -258,44 +275,49 @@ const SettingsScreen = () => {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Section */}
+        {/* Profile Hero Section */}
         <Animated.View entering={FadeInDown.delay(0)}>
-          <SettingSection title="PROFILE">
-            <View style={styles.profileSection}>
+          <View style={[styles.heroCard, { backgroundColor: theme.surface, borderColor: theme.border, ...shadows }]}>
+            <View style={styles.heroInner}>
               <TouchableOpacity
                 style={styles.profileImageContainer}
                 onPress={handleImagePicker}
+                activeOpacity={0.85}
+                disabled={uploadingImage}
               >
-                {profileImage ? (
+                {uploadingImage ? (
+                  <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.primary + '18' }]}>
+                    <ActivityIndicator size="large" color={theme.primary} />
+                  </View>
+                ) : profileImage ? (
                   <Image source={{ uri: profileImage }} style={styles.profileImage} />
                 ) : (
-                  <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.primary + '20' }]}>
-                    <User size={moderateScale(40)} color={theme.primary} />
+                  <View style={[styles.profileImagePlaceholder, { backgroundColor: theme.primary + '18' }]}>
+                    <User size={moderateScale(44)} color={theme.primary} strokeWidth={1.5} />
                   </View>
                 )}
-                <View style={[styles.cameraIcon, { backgroundColor: theme.primary }]}>
-                  <Camera size={moderateScale(14)} color="#fff" />
+                <View style={[styles.cameraBadge, { backgroundColor: theme.primary }]}>
+                  <Camera size={moderateScale(18)} color="#fff" strokeWidth={2.5} />
                 </View>
               </TouchableOpacity>
               <View style={styles.profileInfo}>
-                <Text style={[styles.profileName, { color: theme.text }]}>
-                  {user?.name ?? (currentRole === 'doctor' ? 'Dr. Smith' : 
-                   currentRole === 'clinic' ? 'City Clinic' :
-                   currentRole === 'factory' ? 'MedFactory' : 'User')}
+                <Text style={[styles.profileName, { color: theme.text }]} numberOfLines={1}>
+                  {user?.name ?? (currentRole === 'doctor' ? 'Dr. Smith' : currentRole === 'clinic' ? 'City Clinic' : currentRole === 'factory' ? 'MedFactory' : 'User')}
                 </Text>
-                <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>
+                <Text style={[styles.profileEmail, { color: theme.textSecondary }]} numberOfLines={1}>
                   {user?.email ?? user?.phone_number ?? '—'}
                 </Text>
+                <TouchableOpacity
+                  style={[styles.editProfileBtn, { borderColor: theme.primary }]}
+                  onPress={() => navigation.navigate(getProfileScreen() as any)}
+                  activeOpacity={0.8}
+                >
+                  <Edit2 size={moderateScale(16)} color={theme.primary} strokeWidth={2} />
+                  <Text style={[styles.editProfileText, { color: theme.primary }]}>Edit profile</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={[styles.editProfileBtn, { borderColor: theme.primary }]}
-                onPress={() => navigation.navigate(getProfileScreen() as any)}
-              >
-                <Edit2 size={moderateScale(16)} color={theme.primary} />
-                <Text style={[styles.editProfileText, { color: theme.primary }]}>Edit</Text>
-              </TouchableOpacity>
             </View>
-          </SettingSection>
+          </View>
         </Animated.View>
 
         {/* Account Settings */}
@@ -454,82 +476,96 @@ const SettingsScreen = () => {
   );
 };
 
+const AVATAR_SIZE = moderateScale(88);
+const CAMERA_BADGE_SIZE = moderateScale(32);
+
 const styles = StyleSheet.create({
   container: {
-    padding: moderateScale(16),
+    padding: moderateScale(20),
   },
   section: {
     marginBottom: verticalScale(24),
   },
   sectionTitle: {
-    fontSize: moderateScale(12),
+    fontSize: moderateScale(11),
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: verticalScale(8),
+    letterSpacing: 1,
+    marginBottom: verticalScale(10),
     paddingHorizontal: moderateScale(4),
   },
   sectionContent: {
     borderRadius: moderateScale(16),
     overflow: 'hidden',
   },
-  profileSection: {
+  heroCard: {
+    borderRadius: moderateScale(20),
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: verticalScale(24),
+    overflow: 'hidden',
+  },
+  heroInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: moderateScale(20),
-    gap: moderateScale(16),
+    padding: moderateScale(24),
+    gap: moderateScale(20),
   },
   profileImageContainer: {
     position: 'relative',
   },
   profileImage: {
-    width: moderateScale(60),
-    height: moderateScale(60),
-    borderRadius: moderateScale(30),
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
   },
   profileImagePlaceholder: {
-    width: moderateScale(60),
-    height: moderateScale(60),
-    borderRadius: moderateScale(30),
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cameraIcon: {
+  cameraBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: moderateScale(20),
-    height: moderateScale(20),
-    borderRadius: moderateScale(10),
+    width: CAMERA_BADGE_SIZE,
+    height: CAMERA_BADGE_SIZE,
+    borderRadius: CAMERA_BADGE_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: '#fff',
   },
   profileInfo: {
     flex: 1,
+    minWidth: 0,
   },
   profileName: {
-    fontSize: moderateScale(18),
-    fontWeight: '900',
-    marginBottom: verticalScale(2),
+    fontSize: moderateScale(20),
+    fontWeight: '700',
+    marginBottom: verticalScale(4),
+    letterSpacing: 0.2,
   },
   profileEmail: {
-    fontSize: moderateScale(13),
+    fontSize: moderateScale(14),
     fontWeight: '500',
+    opacity: 0.85,
+    marginBottom: verticalScale(12),
   },
   editProfileBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: moderateScale(16),
+    alignSelf: 'flex-start',
+    paddingHorizontal: moderateScale(14),
     paddingVertical: verticalScale(8),
-    borderRadius: moderateScale(20),
+    borderRadius: moderateScale(12),
     borderWidth: 1.5,
     gap: moderateScale(6),
   },
   editProfileText: {
-    fontSize: moderateScale(13),
-    fontWeight: '700',
+    fontSize: moderateScale(14),
+    fontWeight: '600',
   },
   settingItem: {
     flexDirection: 'row',

@@ -18,6 +18,7 @@ import { supabase } from '@/hooks/superbase';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { useRoleStore } from '@/hooks/useRoleStore';
 import { getOnboardingProfile } from '@/Helpers/AppStorage';
+import { resetToHome } from '@/navigation/RootNavigation';
 import { AuthHeader } from './components/AuthHeader';
 import { OTPInput } from './components/OTPInput';
 import { useAuthBackHandler } from './hooks/useAuthBackHandler';
@@ -60,6 +61,7 @@ const OTPVerificationScreen = () => {
     if (otp.length !== 6) return;
     setLoading(true);
     try {
+      // Onboarding flow: backend checks if user exists. Existing + verified → Home; new or unverified → Role → Story → KYC → Home.
       if (fromOnboarding) {
         const res = await APICall<{ data?: { user?: { id?: string; name?: string; email?: string; phone_number?: string; avatar_url?: string; kyc_status?: string; roles?: string[] }; token?: string }; message?: string }>(
           'post',
@@ -82,10 +84,13 @@ const OTPVerificationScreen = () => {
           if (normalizedUser.kyc_status === 'verified' && normalizedUser.roles?.length) {
             setAvailableRoles(normalizedUser.roles);
             setRole(normalizedUser.roles[0] as any);
-            return;
+          } else {
+            setAvailableRoles(normalizedUser.roles?.length ? normalizedUser.roles : ['user']);
+            setRole((normalizedUser.roles?.[0] as any) ?? 'user');
           }
-          setAvailableRoles(normalizedUser.roles?.length ? normalizedUser.roles : ['user']);
-          setRole((normalizedUser.roles?.[0] as any) ?? 'user');
+          // Fetch full profile from DB (avatar, addresses, payment_methods, etc.) so Profile/Settings/Documents/Payment show correct data
+          useAuthStore.getState().fetchUserProfile().catch(() => {});
+          resetToHome();
           return;
         }
         const msg = (res.data as { message?: string })?.message || 'Invalid or expired code. Try again.';
@@ -109,6 +114,7 @@ const OTPVerificationScreen = () => {
         };
         setAuth(user as any, data.session.access_token || '');
         applyRoleFromProfile();
+        resetToHome();
         return;
       }
       throw new Error('Verification failed');
@@ -122,6 +128,7 @@ const OTPVerificationScreen = () => {
           if (byEmail.data) {
             setAuth(byEmail.data, 'dummy-token');
             applyRoleFromProfile();
+            resetToHome();
             return;
           }
           let profile: OnboardingProfile | null = null;
@@ -140,6 +147,7 @@ const OTPVerificationScreen = () => {
           const role: UserRole = profile?.role ?? currentRole ?? 'user';
           setAvailableRoles([role]);
           setRole(role);
+          resetToHome();
         } catch (fallbackErr: any) {
           Alert.alert('Verification failed', fallbackErr?.message || msg);
         }

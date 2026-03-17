@@ -19,12 +19,13 @@ export const HealthAdviceCard = () => {
           },
         ]}
       >
-        <LinearGradient
-          colors={theme.gradientSecondary || [theme.secondary, theme.secondary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.adviceCard}
-        >
+        <View style={styles.adviceCardShadow}>
+          <LinearGradient
+            colors={theme.gradientSecondary || [theme.secondary, theme.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.adviceCard}
+          >
           {/* Content */}
           <View style={styles.adviceInfo}>
             <View style={styles.badge}>
@@ -56,7 +57,8 @@ export const HealthAdviceCard = () => {
             style={styles.adviceImage}
             resizeMode="contain"
           />
-        </LinearGradient>
+          </LinearGradient>
+        </View>
       </Pressable>
     </View>
   );
@@ -72,6 +74,16 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(28),
   },
 
+  adviceCardShadow: {
+    borderRadius: moderateScale(28),
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    backgroundColor: 'transparent',
+  },
+
   adviceCard: {
     borderRadius: moderateScale(28),
     padding: moderateScale(10),
@@ -79,12 +91,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: verticalScale(250),
     overflow: 'hidden',
-
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
   },
 
   adviceInfo: {

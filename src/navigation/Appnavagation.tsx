@@ -1,52 +1,57 @@
 import { Toasts } from '@backpackapp-io/react-native-toast';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppLoader, Loader } from '@/Components';
 import { Constant } from '@/Helpers/Constant';
-import { getHasSeenStory } from '@/Helpers/AppStorage';
-import { useOnboardingStore } from '@/hooks/useOnboardingStore';
 import { CommonStyle } from '@/Theme';
 import type { RootStackParamList } from '@/types';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { useLocationTracker } from '@/hooks/useLocationTracker';
 
 import AuthNavigation from './AuthNavigation';
-import PostAuthOnboardingNavigation from './PostAuthOnboardingNavigation';
 import HomeNavigation from './HomeNavigation';
-import KYCScreen from '@/Screens/Auth/KYCScreen';
 import { navigationRef } from './RootNavigation';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-const AppNavigatorContent = () => {
-  const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
-  const [hasHydrated, setHasHydrated] = useState(false);
+type RootRouteName = 'Auth' | 'Home';
+
+function getInitialRouteName(hasToken: boolean): RootRouteName {
+  return hasToken ? 'Home' : 'Auth';
+}
+
+const authStorePersist = (useAuthStore as unknown as { persist?: { hasHydrated: () => boolean; onFinishHydration: (cb: () => void) => () => void } }).persist;
+
+export default function AppNavigation() {
   useLocationTracker();
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
-    const store = useAuthStore as typeof useAuthStore & { persist?: { hasHydrated: () => boolean; onFinishHydration: (cb: () => void) => () => void } };
-    if (!store.persist) {
+    if (!authStorePersist) {
       setHasHydrated(true);
       return;
     }
-    if (store.persist.hasHydrated()) {
+    if (authStorePersist.hasHydrated()) {
       setHasHydrated(true);
       return;
     }
-    const unsub = store.persist.onFinishHydration(() => setHasHydrated(true));
+    const unsub = authStorePersist.onFinishHydration(() => setHasHydrated(true));
     return () => unsub?.();
   }, []);
 
-  const isAuthenticated = !!token;
-  const storyCompleted = useOnboardingStore((s) => s.storyCompleted);
-  const hasSeenStory = getHasSeenStory() || storyCompleted;
-  const kycVerified = user?.kyc_status === 'verified';
+  const token = useAuthStore((s) => s.token);
+  const fetchUserProfile = useAuthStore((s) => s.fetchUserProfile);
+  const hasToken = !!token;
+  const initialRouteName = useMemo(() => getInitialRouteName(hasToken), [hasToken]);
+
+  // After rehydration, fetch full profile once so Profile/Settings/Documents/Payment show DB data
+  useEffect(() => {
+    if (hasHydrated && token) fetchUserProfile().catch(() => {});
+  }, [hasHydrated, token, fetchUserProfile]);
 
   if (!hasHydrated) {
     return (
@@ -57,39 +62,31 @@ const AppNavigatorContent = () => {
   }
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        ...Constant.navigationOptions,
-      }}
-    >
-      {!isAuthenticated ? (
-        <Stack.Screen name="Auth" component={AuthNavigation} />
-      ) : !hasSeenStory ? (
-        <Stack.Screen name="PostAuthOnboarding" component={PostAuthOnboardingNavigation} />
-      ) : kycVerified ? (
-        <Stack.Screen name="Home" component={HomeNavigation} />
-      ) : (
-        <Stack.Screen name="KYCScreen" component={KYCScreen} />
-      )}
-    </Stack.Navigator>
-  );
-};
-
-const styles = StyleSheet.create({
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-});
-
-export default () => {
-  return (
     <SafeAreaProvider style={CommonStyle.flex}>
-      <GestureHandlerRootView style={CommonStyle.flex}>
-        <NavigationContainer ref={navigationRef}>
-          <AppNavigatorContent />
-        </NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
+        <Stack.Navigator
+          key={initialRouteName}
+          screenOptions={{
+            ...Constant.navigationOptions,
+          }}
+          initialRouteName={initialRouteName}
+        >
+          <Stack.Screen name="Auth" component={AuthNavigation} />
+          <Stack.Screen name="Home" component={HomeNavigation} />
+        </Stack.Navigator>
+      </NavigationContainer>
 
-        <AppLoader ref={(ref: any) => Loader.setLoader(ref)} />
-        <Toasts />
-      </GestureHandlerRootView>
+      <AppLoader ref={(ref: any) => Loader.setLoader(ref)} />
+      <Toasts />
     </SafeAreaProvider>
   );
-};
+}
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+});

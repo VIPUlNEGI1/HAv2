@@ -1,8 +1,14 @@
- 
 import Config from 'react-native-config';
 
 const DEFAULT_API_BASE = 'https://hospital-app-kwvg.onrender.com';
 const BASE_URL = (Config.API_BASE_URL || DEFAULT_API_BASE).replace(/\/$/, '');
+
+// If you see "Network request failed": check console for [API] BASE_URL. Open that URL in Safari on the device.
+// For a local backend: set API_BASE_URL=http://YOUR_MAC_IP:PORT in .env (e.g. http://192.168.1.5:3000), then rebuild (npx react-native run-ios).
+
+if (typeof __DEV__ !== 'undefined' && __DEV__ && console?.log) {
+  console.log('[API] BASE_URL:', BASE_URL);
+}
 
 const REQUEST_TIMEOUT_MS = 90000; // 90s for Render free-tier cold start
 const RETRY_DELAY_MS = 5000;       // wait before each retry after timeout
@@ -42,6 +48,19 @@ function apiLog(
     const ok = status != null && status >= 200 && status < 300;
     if (ok) {
       console.log(`[API] ${method} ${shortPath} → ${status}`);
+      // Log response body for profile so you can verify backend data
+      if (shortPath.includes('/api/profile') && payload != null && typeof payload === 'object') {
+        const p = payload as { success?: boolean; data?: { user?: Record<string, unknown> } };
+        const data = p.data;
+        const user = data?.user;
+        console.log('[API] GET /api/profile response:', {
+          success: p.success,
+          hasData: !!data,
+          hasUser: !!user,
+          userKeys: user ? Object.keys(user) : [],
+          userPreview: user ? { id: user.id ?? user._id, name: user.name, email: user.email } : null,
+        });
+      }
     } else {
       console.warn(`[API] ${method} ${shortPath} → ${status}`, payload != null ? payload : '');
     }
@@ -67,6 +86,11 @@ function buildUrl(path: string): string {
 function isTimeoutResponse(data: unknown): boolean {
   const msg = (data as { message?: string })?.message ?? '';
   return typeof msg === 'string' && (msg.includes('timed out') || msg.includes('starting'));
+}
+
+function isNetworkFailedResponse(data: unknown): boolean {
+  const msg = (data as { message?: string })?.message ?? '';
+  return typeof msg === 'string' && msg.includes('Network request failed');
 }
 
 /**
@@ -150,8 +174,13 @@ function apicallOnce<T>(
           code: (error as { code?: string })?.code,
           userMessage: message,
         });
-        if (isTimeout && LOG_API && console?.warn) {
-          console.warn('[API] Timeout. Test this URL in browser:', requestUrl);
+        if (LOG_API && console?.warn) {
+          if (isTimeout) {
+            console.warn('[API] Timeout. Test in Safari:', requestUrl);
+          } else if (message.includes('Network request failed')) {
+            console.warn('[API] Network request failed. Full URL:', requestUrl);
+            console.warn('[API] → Open this URL in Safari on your device/simulator. If it fails, the device cannot reach the server (backend down, wrong API_BASE_URL, or no internet).');
+          }
         }
         resolve({
           status: 500,
@@ -180,9 +209,12 @@ export async function APICall<T = unknown>(
 
   let res = await apicallOnce<T>(method, body, url, headers, token);
 
-  for (let attempt = 1; attempt <= MAX_TIMEOUT_RETRIES && res.status === 500 && isTimeoutResponse(res.data); attempt++) {
+  const retryable = (r: ApiResponse<T>) =>
+    r.status === 500 && (isTimeoutResponse(r.data) || isNetworkFailedResponse(r.data));
+  const maxRetries = MAX_TIMEOUT_RETRIES + 1;
+  for (let attempt = 1; attempt <= maxRetries && retryable(res); attempt++) {
     if (LOG_API && console?.log) {
-      console.log(`[API] retry ${attempt}/${MAX_TIMEOUT_RETRIES} after timeout in ${RETRY_DELAY_MS / 1000}s: ${url.slice(0, 60)}`);
+      console.log(`[API] retry ${attempt}/${maxRetries} in ${RETRY_DELAY_MS / 1000}s: ${url.slice(0, 60)}`);
     }
     await new Promise<void>((r) => setTimeout(() => r(), RETRY_DELAY_MS));
     res = await apicallOnce<T>(method, body, url, headers, token);

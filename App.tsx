@@ -1,22 +1,25 @@
+import 'react-native-reanimated';
 import React from 'react';
-import { StatusBar, useColorScheme } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LogBox, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import AppNavigator from './src/navigation/Appnavagation';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+import { CommonStyle } from '@/Theme';
+import AppNavigation from '@/navigation/Appnavagation';
+import { getPersistedAuthToken } from '@/Helpers/AppStorage';
 
+LogBox.ignoreAllLogs();
+
+export default function App() {
+  const token = getPersistedAuthToken();
+  console.log('App component rendered', token ? 'token present' : 'no token');
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        />
-        <AppNavigator />
-      </SafeAreaProvider>
+    
+    <GestureHandlerRootView style={CommonStyle.flex}>
+      <StatusBar hidden translucent backgroundColor="transparent" />
+      <KeyboardProvider>
+        <AppNavigation />
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
-
-export default App;

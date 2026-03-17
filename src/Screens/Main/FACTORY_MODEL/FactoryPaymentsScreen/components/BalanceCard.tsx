@@ -26,7 +26,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   const balanceSubTextSize = isSmallScreen ? moderateScale(12) : moderateScale(14);
 
   return (
-    <LinearGradient colors={primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.card, shadows]}>
+    <View style={[styles.cardShadow, shadows]}>
+      <LinearGradient colors={primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
       <View style={styles.content}>
         <View style={styles.left}>
           <View style={styles.header}>
@@ -75,14 +76,19 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         </View>
       </View>
     </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  cardShadow: {
+    borderRadius: moderateScale(28),
+    marginBottom: verticalScale(22),
+    backgroundColor: 'transparent',
+  },
   card: {
     borderRadius: moderateScale(28),
     padding: moderateScale(4),
-    marginBottom: verticalScale(22),
     overflow: 'hidden',
     minHeight: verticalScale(200),
   },

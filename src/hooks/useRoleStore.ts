@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/Helpers/AppStorage';
+import { zustandStorage, AppStorageKeys } from '@/Helpers/AppStorage';
 import type { UserRole } from '@/types';
 
 interface RoleState {
@@ -29,7 +29,7 @@ export const useRoleStore = create<RoleState>()(
       },
     }),
     {
-      name: 'role-storage',
+      name: AppStorageKeys.ROLE_STORAGE,
       storage: createJSONStorage(() => zustandStorage),
       onRehydrateStorage: (state) => {
         console.log('Rehydration started');

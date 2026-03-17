@@ -146,7 +146,7 @@ const KYCScreen = () => {
 
     setSubmitting(true);
     try {
-      // Upload image and get avatar_url (backend accepts base64 data URL)
+      let avatarUrl: string | undefined;
       const uploadRes = await APICall<{ data?: { avatar_url?: string } }>(
         'post',
         { image_url: photoBase64 },
@@ -154,23 +154,28 @@ const KYCScreen = () => {
         {},
         token,
       );
-      const avatarUrl = uploadRes.data?.data?.avatar_url ?? photoBase64;
+      if (uploadRes.status === 200 && uploadRes.data?.data?.avatar_url) {
+        avatarUrl = uploadRes.data.data.avatar_url;
+      }
+      // If upload failed, do not send base64 in profile update (keeps request small and avoids network/body issues)
+      const profilePayload: Record<string, unknown> = {
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: location.address,
+          city: location.city,
+          state: location.state,
+          pincode: location.pincode,
+        },
+        kyc_status: 'verified',
+      };
+      if (avatarUrl) {
+        profilePayload.avatar_url = avatarUrl;
+      }
 
-      // Update profile with avatar, location, and kyc_status
       const profileRes = await APICall<{ data?: { avatar_url?: string; location?: UserLocation; kyc_status?: string } }>(
         'put',
-        {
-          avatar_url: avatarUrl,
-          location: {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            address: location.address,
-            city: location.city,
-            state: location.state,
-            pincode: location.pincode,
-          },
-          kyc_status: 'verified',
-        },
+        profilePayload,
         ApiRoutes.auth.profile,
         {},
         token,
@@ -180,13 +185,13 @@ const KYCScreen = () => {
         const data = profileRes.data.data;
         const updatedUser = {
           ...user,
-          avatar_url: data.avatar_url ?? avatarUrl,
+          avatar_url: data.avatar_url ?? avatarUrl ?? user?.avatar_url,
           location: data.location ?? location,
           kyc_status: 'verified' as const,
         };
         setAuth(updatedUser as any, token);
       } else {
-        const msg = (profileRes.data as { message?: string })?.message || 'Could not complete verification.';
+        const msg = (profileRes.data as { message?: string })?.message || 'Could not complete verification. Check your connection and try again.';
         Alert.alert('Error', msg);
       }
     } catch (e) {
